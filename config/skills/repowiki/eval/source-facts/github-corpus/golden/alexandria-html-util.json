@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "caseId": "alexandria-html-util",
+  "thresholds": {
+    "default": {
+      "recall": 1,
+      "precision": 0
+    }
+  },
+  "expected": {
+    "packages": ["HTML_UTIL_PKG"],
+    "subprograms": [
+      "HTML_UTIL_PKG.get_html_with_line_breaks",
+      "HTML_UTIL_PKG.add_hyperlinks"
+    ],
+    "params": [
+      "HTML_UTIL_PKG.get_html_with_line_breaks|P_HTML|IN|VARCHAR2",
+      "HTML_UTIL_PKG.add_hyperlinks|P_TEXT|IN|VARCHAR2",
+      "HTML_UTIL_PKG.add_hyperlinks|P_TEXT|IN|CLOB",
+      "HTML_UTIL_PKG.add_hyperlinks|P_CLASS|IN|VARCHAR2 := NULL"
+    ],
+    "returnTypes": [
+      "HTML_UTIL_PKG.get_html_with_line_breaks|VARCHAR2",
+      "HTML_UTIL_PKG.add_hyperlinks|VARCHAR2",
+      "HTML_UTIL_PKG.add_hyperlinks|CLOB"
+    ]
+  }
+}

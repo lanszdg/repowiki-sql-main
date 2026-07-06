@@ -1,0 +1,151 @@
+{
+  "schema": {
+    "backend": "fixture/plsql-l1",
+    "version": 1
+  },
+  "counts": {
+    "files": 3,
+    "nodes": 10,
+    "edges": 5,
+    "nodesByKind": {
+      "package": 1,
+      "procedure": 1,
+      "function": 1,
+      "table": 2,
+      "column": 5,
+      "sequence": 1
+    },
+    "edgesByKind": {
+      "contains": 5
+    }
+  },
+  "files": [
+    {
+      "path": "src/inventory_pkg.pks",
+      "language": "plsql",
+      "size": 190,
+      "node_count": 3
+    },
+    {
+      "path": "src/schema.sql",
+      "language": "plsql",
+      "size": 211,
+      "node_count": 7
+    }
+  ],
+  "nodes": [
+    {
+      "id": "src/inventory_pkg.pks#package#INVENTORY_PKG",
+      "kind": "package",
+      "name": "INVENTORY_PKG",
+      "qualified_name": "INVENTORY_PKG",
+      "file_path": "src/inventory_pkg.pks",
+      "language": "plsql",
+      "signature": "PACKAGE INVENTORY_PKG",
+      "oracle_type": "PACKAGE"
+    },
+    {
+      "id": "src/inventory_pkg.pks#procedure#INVENTORY_PKG.bulk_receive",
+      "kind": "procedure",
+      "name": "bulk_receive",
+      "qualified_name": "INVENTORY_PKG.bulk_receive",
+      "file_path": "src/inventory_pkg.pks",
+      "language": "plsql",
+      "signature": "PROCEDURE bulk_receive(p_item_id IN NUMBER, p_qty IN NUMBER, p_result OUT VARCHAR2)",
+      "oracle_type": "PROCEDURE",
+      "package_name": "INVENTORY_PKG",
+      "params": [
+        {
+          "name": "p_item_id",
+          "direction": "IN",
+          "oracle_type": "NUMBER"
+        },
+        {
+          "name": "p_qty",
+          "direction": "IN",
+          "oracle_type": "NUMBER"
+        },
+        {
+          "name": "p_result",
+          "direction": "OUT",
+          "oracle_type": "VARCHAR2"
+        }
+      ],
+      "return_type": null
+    },
+    {
+      "id": "src/inventory_pkg.pks#function#INVENTORY_PKG.get_stock",
+      "kind": "function",
+      "name": "get_stock",
+      "qualified_name": "INVENTORY_PKG.get_stock",
+      "file_path": "src/inventory_pkg.pks",
+      "language": "plsql",
+      "signature": "FUNCTION get_stock(p_item_id IN NUMBER) RETURN NUMBER",
+      "oracle_type": "FUNCTION",
+      "package_name": "INVENTORY_PKG",
+      "params": [
+        {
+          "name": "p_item_id",
+          "direction": "IN",
+          "oracle_type": "NUMBER"
+        }
+      ],
+      "return_type": "NUMBER"
+    },
+    {
+      "id": "src/schema.sql#table#INV_TXN",
+      "kind": "table",
+      "name": "INV_TXN",
+      "qualified_name": "INV_TXN",
+      "file_path": "src/schema.sql",
+      "language": "plsql",
+      "signature": "TABLE INV_TXN",
+      "oracle_type": "TABLE",
+      "columns": [
+        {
+          "name": "ITEM_ID",
+          "oracle_type": "NUMBER"
+        },
+        {
+          "name": "QTY",
+          "oracle_type": "NUMBER"
+        },
+        {
+          "name": "STATUS",
+          "oracle_type": "VARCHAR2(8)"
+        }
+      ]
+    },
+    {
+      "id": "src/schema.sql#table#INV_AUDIT",
+      "kind": "table",
+      "name": "INV_AUDIT",
+      "qualified_name": "INV_AUDIT",
+      "file_path": "src/schema.sql",
+      "language": "plsql",
+      "signature": "TABLE INV_AUDIT",
+      "oracle_type": "TABLE",
+      "columns": [
+        {
+          "name": "ITEM_ID",
+          "oracle_type": "NUMBER"
+        },
+        {
+          "name": "ACTION",
+          "oracle_type": "VARCHAR2(32)"
+        }
+      ]
+    },
+    {
+      "id": "src/schema.sql#sequence#INV_TXN_SEQ",
+      "kind": "sequence",
+      "name": "INV_TXN_SEQ",
+      "qualified_name": "INV_TXN_SEQ",
+      "file_path": "src/schema.sql",
+      "language": "plsql",
+      "signature": "SEQUENCE INV_TXN_SEQ",
+      "oracle_type": "SEQUENCE"
+    }
+  ],
+  "edges": []
+}

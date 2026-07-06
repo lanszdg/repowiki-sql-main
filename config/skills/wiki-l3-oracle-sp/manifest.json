@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "docsDir": "fsd",
+  "appName": {
+    "source": "repo-dir",
+    "fallback": "oracle-sp"
+  },
+  "capabilities": {
+    "serviceList": false,
+    "functionList": false,
+    "functionDocGuide": false,
+    "functionDoc": true,
+    "docPathSource": "function-facts",
+    "structuredFacts": true,
+    "fsdFactsRequired": true,
+    "factsDir": "fsd-facts"
+  },
+  "outputs": {
+    "functionDocSuffix": ""
+  }
+}

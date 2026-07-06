@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "caseId": "oracle-trigger-predicates",
+  "thresholds": {
+    "default": {
+      "recall": 1,
+      "precision": 0
+    }
+  },
+  "expected": {
+    "triggers": [
+      "EMPLOYEE_CHANGES_AFTER",
+      "EMPLOYEE_CHANGES_BEFORE"
+    ]
+  }
+}

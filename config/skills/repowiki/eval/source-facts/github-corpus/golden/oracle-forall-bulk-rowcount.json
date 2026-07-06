@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "caseId": "oracle-forall-bulk-rowcount",
+  "thresholds": {
+    "default": {
+      "recall": 1,
+      "precision": 0
+    }
+  },
+  "expected": {
+    "packages": ["__STANDALONE__"],
+    "subprograms": ["__STANDALONE__.put_in_table"],
+    "params": ["__STANDALONE__.put_in_table|N_IN|IN|IDLIST_T"],
+    "tables": ["__STANDALONE__.put_in_table|EMPNO_TEMP|INSERT"],
+    "controlFlow": [
+      "__STANDALONE__.put_in_table|FORALL",
+      "__STANDALONE__.put_in_table|EXCEPTION",
+      "__STANDALONE__.put_in_table|WHEN",
+      "__STANDALONE__.put_in_table|ROLLBACK",
+      "__STANDALONE__.put_in_table|RAISE"
+    ],
+    "exceptions": ["__STANDALONE__.put_in_table|OTHERS|RAISE"],
+    "transactions": [
+      "__STANDALONE__.put_in_table|AUTONOMOUS_TRANSACTION",
+      "__STANDALONE__.put_in_table|COMMIT",
+      "__STANDALONE__.put_in_table|ROLLBACK"
+    ],
+    "specialSyntax": [
+      "__STANDALONE__.put_in_table|PRAGMA AUTONOMOUS_TRANSACTION",
+      "__STANDALONE__.put_in_table|EXECUTE IMMEDIATE",
+      "__STANDALONE__.put_in_table|FORALL",
+      "__STANDALONE__.put_in_table|COMMIT",
+      "__STANDALONE__.put_in_table|ROLLBACK"
+    ]
+  }
+}

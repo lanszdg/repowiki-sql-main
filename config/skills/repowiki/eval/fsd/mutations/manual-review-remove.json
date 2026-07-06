@@ -1,0 +1,1 @@
+{ "id": "manual-review-remove", "type": "manualReview", "op": "remove", "path": "manualReview", "expectedGate": "REQUIRED_FIELD_MISSING" }

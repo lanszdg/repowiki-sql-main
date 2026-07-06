@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "identity": {
+    "id": "INVENTORY_PKG.bulk_receive",
+    "packageName": "INVENTORY_PKG",
+    "subprogramName": "bulk_receive",
+    "refName": "bulk_receive",
+    "kind": "PROCEDURE",
+    "overloadIndex": null,
+    "outputPath": "fsd/INVENTORY_PKG/bulk_receive.md"
+  },
+  "signature": {
+    "raw": "PROCEDURE bulk_receive(p_item_id IN NUMBER)",
+    "params": [
+      {
+        "name": "p_item_id",
+        "direction": "IN",
+        "oracleType": "NUMBER",
+        "javaType": "BigDecimal"
+      }
+    ],
+    "return": null
+  },
+  "tableMappings": [
+    {
+      "tableName": "INV_TXN",
+      "operations": [
+        "INSERT"
+      ],
+      "columns": [
+        "ITEM_ID"
+      ],
+      "sourceTrace": [
+        "table_facts[0]"
+      ]
+    }
+  ],
+  "dependencies": {
+    "calls": [
+      {
+        "target": "UTIL_PKG.get_param",
+        "sourceTrace": [
+          "cross_package_calls[0]"
+        ]
+      }
+    ],
+    "calledBy": [],
+    "sequences": [
+      {
+        "name": "INV_TXN_SEQ",
+        "sourceTrace": [
+          "sequence_deps[0]"
+        ]
+      }
+    ],
+    "constants": [
+      {
+        "target": "CONST_PKG.STATUS_OK",
+        "value": "OK",
+        "sourceTrace": [
+          "constant_deps[0]"
+        ]
+      }
+    ]
+  },
+  "controlFlow": {
+    "nodes": [],
+    "branches": [],
+    "loops": [],
+    "mermaidHint": ""
+  },
+  "exceptions": [],
+  "transactions": {
+    "hasCommit": false,
+    "hasRollback": false,
+    "hasSavepoint": false,
+    "autonomous": false,
+    "springEquivalent": ""
+  },
+  "specialSyntax": [
+    {
+      "id": "forall-1",
+      "type": "FORALL",
+      "risk": "medium",
+      "mapping": "",
+      "sourceTrace": [
+        "special_syntax[0]"
+      ]
+    }
+  ],
+  "manualReview": [
+    {
+      "id": "review-forall-1",
+      "sourceId": "forall-1",
+      "severity": "medium",
+      "reason": "FORALL requires migration review"
+    }
+  ],
+  "sourceTrace": [
+    {
+      "file": "pkg/inventory_pkg.sql",
+      "startLine": 1,
+      "endLine": 80,
+      "fact": "subprogram"
+    }
+  ],
+  "coverage": {
+    "requiredSections": [
+      "overview",
+      "tableMappings",
+      "dependencies",
+      "businessRules",
+      "controlFlowAndExceptions",
+      "specialSyntaxMappings"
+    ],
+    "factsTotal": 17,
+    "factsCoveredByMarkdown": 0,
+    "gaps": []
+  }
+}

@@ -1,0 +1,12 @@
+{"case_id":"valid","fixture":"valid.json","markdown":"valid.md","corpus":"local-main","source":"local-fixture","role":"positive"}
+{"case_id":"valid-local-02","fixture":"valid.json","markdown":"valid.md","corpus":"local-main","source":"local-fixture","role":"positive"}
+{"case_id":"valid-local-03","fixture":"valid.json","markdown":"valid.md","corpus":"local-main","source":"local-fixture","role":"positive"}
+{"case_id":"valid-local-04","fixture":"valid.json","markdown":"valid.md","corpus":"local-main","source":"local-fixture","role":"positive"}
+{"case_id":"valid-local-05","fixture":"valid.json","markdown":"valid.md","corpus":"local-main","source":"local-fixture","role":"positive"}
+{"case_id":"valid-local-06","fixture":"valid.json","markdown":"valid.md","corpus":"local-main","source":"local-fixture","role":"positive"}
+{"case_id":"valid-local-07","fixture":"valid.json","markdown":"valid.md","corpus":"local-main","source":"local-fixture","role":"positive"}
+{"case_id":"valid-local-08","fixture":"valid.json","markdown":"valid.md","corpus":"local-main","source":"local-fixture","role":"positive"}
+{"case_id":"valid-local-09","fixture":"valid.json","markdown":"valid.md","corpus":"local-main","source":"local-fixture","role":"positive"}
+{"case_id":"valid-local-10","fixture":"valid.json","markdown":"valid.md","corpus":"local-main","source":"local-fixture","role":"positive"}
+{"case_id":"valid-local-11","fixture":"valid.json","markdown":"valid.md","corpus":"local-main","source":"local-fixture","role":"positive"}
+{"case_id":"valid-local-12","fixture":"valid.json","markdown":"valid.md","corpus":"local-main","source":"local-fixture","role":"positive"}

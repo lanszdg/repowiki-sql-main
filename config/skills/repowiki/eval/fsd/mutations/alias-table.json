@@ -1,0 +1,1 @@
+{ "id": "alias-table", "type": "alias", "op": "set", "path": "tableMappings.0.tableName", "value": "tgt", "expectedGate": "SQL_ALIAS_POLLUTION" }

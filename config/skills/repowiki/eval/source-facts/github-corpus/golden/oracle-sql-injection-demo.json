@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "caseId": "oracle-sql-injection-demo",
+  "thresholds": {
+    "default": {
+      "recall": 1,
+      "precision": 0
+    }
+  },
+  "expected": {
+    "packages": ["SQL_INJECTION_DEMO"],
+    "subprograms": [
+      "SQL_INJECTION_DEMO.name_sal_for",
+      "SQL_INJECTION_DEMO.show_name_sal"
+    ],
+    "params": [
+      "SQL_INJECTION_DEMO.name_sal_for|WHERE_IN|IN|VARCHAR2 DEFAULT NULL",
+      "SQL_INJECTION_DEMO.show_name_sal|TITLE_IN|IN|VARCHAR2",
+      "SQL_INJECTION_DEMO.show_name_sal|ROWS_INOUT|IN OUT|SYS_REFCURSOR"
+    ],
+    "returnTypes": ["SQL_INJECTION_DEMO.name_sal_for|SYS_REFCURSOR"],
+    "tables": ["SQL_INJECTION_DEMO.name_sal_for|EMPLOYEES|SELECT"],
+    "calls": ["SQL_INJECTION_DEMO.show_name_sal|DBMS_OUTPUT.put_line"],
+    "controlFlow": ["SQL_INJECTION_DEMO.show_name_sal|LOOP"],
+    "specialSyntax": ["SQL_INJECTION_DEMO.name_sal_for|OPEN FOR"]
+  }
+}

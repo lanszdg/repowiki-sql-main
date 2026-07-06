@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "identity": {
+    "id": "PLSCOPE_HELPER.show_identifiers_in",
+    "packageName": "PLSCOPE_HELPER",
+    "subprogramName": "show_identifiers_in",
+    "refName": "show_identifiers_in",
+    "kind": "PROCEDURE",
+    "overloadIndex": null,
+    "outputPath": "fsd/PLSCOPE_HELPER/show_identifiers_in.md"
+  },
+  "signature": {
+    "raw": "PROCEDURE show_identifiers_in(owner_in IN VARCHAR2, name_in IN VARCHAR2, identifier_filter_in IN VARCHAR2, usage_type_in IN VARCHAR2)",
+    "params": [
+      {
+        "name": "owner_in",
+        "direction": "IN",
+        "oracleType": "VARCHAR2",
+        "javaType": "String"
+      },
+      {
+        "name": "name_in",
+        "direction": "IN",
+        "oracleType": "VARCHAR2",
+        "javaType": "String"
+      },
+      {
+        "name": "identifier_filter_in",
+        "direction": "IN",
+        "oracleType": "VARCHAR2",
+        "javaType": "String"
+      },
+      {
+        "name": "usage_type_in",
+        "direction": "IN",
+        "oracleType": "VARCHAR2",
+        "javaType": "String"
+      }
+    ],
+    "return": null
+  },
+  "tableMappings": [
+    {
+      "tableName": "USER_IDENTIFIERS",
+      "operations": [
+        "SELECT"
+      ],
+      "columns": [
+        "OBJECT_NAME"
+      ],
+      "sourceTrace": [
+        "table_facts[0]"
+      ]
+    }
+  ],
+  "dependencies": {
+    "calls": [],
+    "calledBy": [],
+    "sequences": [],
+    "constants": []
+  },
+  "controlFlow": {
+    "nodes": [],
+    "branches": [],
+    "loops": [],
+    "mermaidHint": ""
+  },
+  "exceptions": [],
+  "transactions": {
+    "hasCommit": false,
+    "hasRollback": false,
+    "hasSavepoint": false,
+    "autonomous": false,
+    "springEquivalent": ""
+  },
+  "specialSyntax": [],
+  "manualReview": [],
+  "sourceTrace": [
+    {
+      "file": "plsql/code-analysis/plscope-helper-package.sql",
+      "startLine": 1273,
+      "endLine": 1282,
+      "fact": "subprogram"
+    }
+  ],
+  "coverage": {
+    "requiredSections": [
+      "overview",
+      "tableMappings",
+      "dependencies",
+      "businessRules",
+      "controlFlowAndExceptions",
+      "specialSyntaxMappings"
+    ],
+    "factsTotal": 14,
+    "factsCoveredByMarkdown": 0,
+    "gaps": []
+  }
+}

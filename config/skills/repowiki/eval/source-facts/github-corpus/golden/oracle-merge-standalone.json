@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "caseId": "oracle-merge-standalone",
+  "thresholds": {
+    "default": {
+      "recall": 1,
+      "precision": 0
+    }
+  },
+  "expected": {
+    "specialSyntax": ["__STANDALONE__.merge_sales|MERGE INTO"]
+  }
+}

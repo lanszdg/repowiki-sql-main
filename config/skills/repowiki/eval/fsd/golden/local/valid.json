@@ -1,0 +1,8 @@
+{
+  "case_id": "valid",
+  "expected": {
+    "identity.id": "INVENTORY_PKG.bulk_receive",
+    "identity.outputPath": "fsd/INVENTORY_PKG/bulk_receive.md",
+    "signature.raw": "PROCEDURE bulk_receive(p_item_id IN NUMBER)"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "caseId": "oracle-plscope-helper",
+  "thresholds": {
+    "default": {
+      "recall": 1,
+      "precision": 0
+    }
+  },
+  "expected": {
+    "packages": ["PLSCOPE_HELPER"],
+    "subprograms": [
+      "PLSCOPE_HELPER.should_contain",
+      "PLSCOPE_HELPER.unused_exceptions_in"
+    ],
+    "tables": [
+      "PLSCOPE_HELPER.unused_exceptions_in|USER_IDENTIFIERS|SELECT",
+      "PLSCOPE_HELPER.unused_exceptions_in|SUBPROGRAMS_WITH_EXCEPTION|SELECT",
+      "PLSCOPE_HELPER.unused_exceptions_in|SUBPROGRAMS_WITH_RAISE_HANDLE|SELECT"
+    ],
+    "specialSyntax": [
+      "PLSCOPE_HELPER.should_contain|BULK COLLECT INTO",
+      "PLSCOPE_HELPER.should_contain|EXECUTE IMMEDIATE"
+    ]
+  }
+}

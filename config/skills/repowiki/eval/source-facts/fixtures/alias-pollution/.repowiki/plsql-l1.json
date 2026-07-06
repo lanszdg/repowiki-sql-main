@@ -1,0 +1,53 @@
+{
+  "schema": {
+    "backend": "fixture/plsql-l1",
+    "version": 1
+  },
+  "nodes": [
+    {
+      "kind": "package",
+      "name": "INVENTORY_PKG",
+      "qualified_name": "INVENTORY_PKG"
+    },
+    {
+      "kind": "procedure",
+      "name": "bulk_receive",
+      "qualified_name": "INVENTORY_PKG.bulk_receive",
+      "package_name": "INVENTORY_PKG",
+      "signature": "PROCEDURE bulk_receive(p_item_id IN NUMBER, p_qty IN NUMBER, p_result OUT VARCHAR2)",
+      "params": [
+        {
+          "name": "p_item_id",
+          "direction": "IN",
+          "oracle_type": "NUMBER"
+        },
+        {
+          "name": "p_qty",
+          "direction": "IN",
+          "oracle_type": "NUMBER"
+        },
+        {
+          "name": "p_result",
+          "direction": "OUT",
+          "oracle_type": "VARCHAR2"
+        }
+      ]
+    },
+    {
+      "kind": "function",
+      "name": "get_stock",
+      "qualified_name": "INVENTORY_PKG.get_stock",
+      "package_name": "INVENTORY_PKG",
+      "signature": "FUNCTION get_stock(p_item_id IN NUMBER) RETURN NUMBER",
+      "params": [
+        {
+          "name": "p_item_id",
+          "direction": "IN",
+          "oracle_type": "NUMBER"
+        }
+      ],
+      "return_type": "NUMBER"
+    }
+  ],
+  "edges": []
+}

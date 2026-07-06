@@ -1,0 +1,94 @@
+[
+  {
+    "package_name": "INVENTORY_PKG",
+    "method": "bulk_receive",
+    "procedure_type": "PROCEDURE",
+    "signature": "PROCEDURE bulk_receive(p_item_id IN NUMBER, p_qty IN NUMBER, p_result OUT VARCHAR2)",
+    "oracle_params": [
+      {
+        "name": "p_item_id",
+        "direction": "IN",
+        "oracle_type": "NUMBER"
+      },
+      {
+        "name": "p_qty",
+        "direction": "IN",
+        "oracle_type": "NUMBER"
+      },
+      {
+        "name": "p_result",
+        "direction": "OUT",
+        "oracle_type": "VARCHAR2"
+      }
+    ],
+    "table_facts": [
+      {
+        "table": "INV_TXN",
+        "operation": "INSERT",
+        "columns": [
+          "ITEM_ID",
+          "QTY"
+        ]
+      }
+    ],
+    "cross_package_calls": [
+      {
+        "target_package": "UTIL_PKG",
+        "target_member": "get_param"
+      }
+    ],
+    "sequence_deps": [
+      {
+        "sequence": "INV_TXN_SEQ"
+      }
+    ],
+    "constant_deps": [
+      {
+        "target_package": "CONST_PKG",
+        "target_member": "STATUS_OK"
+      }
+    ],
+    "control_flow": {
+      "branches": [
+        {
+          "condition": "p_item_id is null"
+        }
+      ],
+      "loops": []
+    },
+    "exception_handlers": [
+      {
+        "name": "OTHERS",
+        "action": "RAISE"
+      }
+    ],
+    "transactions": {
+      "hasCommit": true
+    },
+    "special_syntax": []
+  },
+  {
+    "package_name": "INVENTORY_PKG",
+    "method": "get_stock",
+    "procedure_type": "FUNCTION",
+    "signature": "FUNCTION get_stock(p_item_id IN NUMBER) RETURN NUMBER",
+    "oracle_params": [
+      {
+        "name": "p_item_id",
+        "direction": "IN",
+        "oracle_type": "NUMBER"
+      }
+    ],
+    "return_type": "NUMBER",
+    "table_facts": [
+      {
+        "table": "INV_TXN",
+        "operation": "SELECT",
+        "columns": [
+          "ITEM_ID",
+          "QTY"
+        ]
+      }
+    ]
+  }
+]

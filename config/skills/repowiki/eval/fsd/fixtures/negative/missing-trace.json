@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "identity": { "id": "BAD_PKG.bad", "packageName": "BAD_PKG", "subprogramName": "bad", "refName": "bad", "kind": "PROCEDURE", "overloadIndex": null, "outputPath": "fsd/BAD_PKG/bad.md" },
+  "signature": { "raw": "PROCEDURE bad", "params": [], "return": null },
+  "tableMappings": [],
+  "dependencies": { "calls": [], "calledBy": [], "sequences": [], "constants": [] },
+  "controlFlow": { "nodes": [], "branches": [], "loops": [], "mermaidHint": "" },
+  "exceptions": [],
+  "transactions": { "hasCommit": false, "hasRollback": false, "hasSavepoint": false, "autonomous": false, "springEquivalent": "" },
+  "specialSyntax": [],
+  "manualReview": [],
+  "sourceTrace": [],
+  "coverage": { "requiredSections": [], "factsTotal": 0, "factsCoveredByMarkdown": 0, "gaps": [] }
+}
+

@@ -1,0 +1,1 @@
+{ "id": "dynamic-sql-risk", "type": "dynamicSql", "op": "set", "path": "specialSyntax.0", "value": { "id": "dynamic-sql-1", "type": "DBMS_SQL", "risk": "high", "mapping": "", "sourceTrace": ["special_syntax[1]"] }, "expectedGate": "MANUAL_REVIEW_REQUIRED" }

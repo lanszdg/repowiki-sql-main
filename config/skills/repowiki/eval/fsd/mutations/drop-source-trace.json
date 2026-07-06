@@ -1,0 +1,1 @@
+{ "id": "drop-source-trace", "type": "sourceTrace", "op": "remove", "path": "sourceTrace", "expectedGate": "SOURCE_TRACE_REQUIRED" }

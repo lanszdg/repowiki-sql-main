@@ -1,0 +1,1 @@
+{ "id": "markdown-extra-fact", "type": "markdownExtraFact", "target": "markdown", "op": "append", "value": "- Table: ORPHAN_TABLE", "expectedGate": "MARKDOWN_FACT_WITHOUT_TRACE" }

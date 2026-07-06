@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "caseId": "pljson-dyn",
+  "thresholds": {
+    "default": {
+      "recall": 1,
+      "precision": 0
+    }
+  },
+  "expected": {
+    "packages": ["PLJSON_DYN"],
+    "subprograms": [
+      "PLJSON_DYN.bind_json",
+      "PLJSON_DYN.executeList",
+      "PLJSON_DYN.executeObject"
+    ],
+    "returnTypes": [
+      "PLJSON_DYN.executeList|PLJSON_LIST",
+      "PLJSON_DYN.executeObject|PLJSON"
+    ],
+    "calls": [
+      "PLJSON_DYN.bind_json|DBMS_SQL.bind_variable",
+      "PLJSON_DYN.bind_json|DBMS_SQL.bind_array",
+      "PLJSON_DYN.executeList|DBMS_SQL.parse",
+      "PLJSON_DYN.executeList|DBMS_SQL.fetch_rows",
+      "PLJSON_DYN.executeObject|DBMS_SQL.parse",
+      "PLJSON_DYN.executeObject|DBMS_SQL.fetch_rows"
+    ],
+    "specialSyntax": [
+      "PLJSON_DYN.bind_json|DBMS_SQL",
+      "PLJSON_DYN.executeList|DBMS_SQL",
+      "PLJSON_DYN.executeObject|DBMS_SQL"
+    ]
+  }
+}

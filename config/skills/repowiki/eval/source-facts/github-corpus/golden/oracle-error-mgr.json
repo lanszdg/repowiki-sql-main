@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "caseId": "oracle-error-mgr",
+  "thresholds": {
+    "default": {
+      "recall": 1,
+      "precision": 0
+    }
+  },
+  "expected": {
+    "packages": ["ERROR_MGR"],
+    "subprograms": ["ERROR_MGR.log_error"],
+    "params": ["ERROR_MGR.log_error|APP_INFO_IN|IN|VARCHAR2"],
+    "tables": ["ERROR_MGR.log_error|ERROR_LOG|INSERT"],
+    "columns": [
+      "ERROR_MGR.log_error|ERROR_LOG|LOG_ID",
+      "ERROR_MGR.log_error|ERROR_LOG|CREATED_ON",
+      "ERROR_MGR.log_error|ERROR_LOG|CREATED_BY",
+      "ERROR_MGR.log_error|ERROR_LOG|ERRORCODE",
+      "ERROR_MGR.log_error|ERROR_LOG|CALLSTACK",
+      "ERROR_MGR.log_error|ERROR_LOG|ERRORSTACK",
+      "ERROR_MGR.log_error|ERROR_LOG|BACKTRACE",
+      "ERROR_MGR.log_error|ERROR_LOG|ERROR_INFO"
+    ],
+    "transactions": [
+      "ERROR_MGR.log_error|AUTONOMOUS_TRANSACTION",
+      "ERROR_MGR.log_error|COMMIT"
+    ],
+    "specialSyntax": [
+      "ERROR_MGR.log_error|PRAGMA AUTONOMOUS_TRANSACTION",
+      "ERROR_MGR.log_error|COMMIT",
+      "ERROR_MGR.log_error|SQLCODE"
+    ]
+  }
+}

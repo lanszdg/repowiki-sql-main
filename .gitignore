@@ -1,0 +1,14 @@
+/.repowiki/
+config/.repowiki/
+**/.repowiki/logs/
+**/.repowiki/l3-dispatcher/
+**/.repowiki/l3-scheduler/active-workers/
+**/.repowiki/l3-scheduler/locks/
+docs/
+*.log
+*.tmp
+*.bak
+
+# Keep the vendored PL/SQL parser dependency for offline execution.
+/node_modules/
+!/config/skills/repowiki/vendor/node_modules/

@@ -1,0 +1,1 @@
+{ "id": "overload-output-path", "type": "overload", "op": "set", "path": "identity.outputPath", "value": "bad/path.md", "expectedGate": "OUTPUT_PATH_INVALID" }

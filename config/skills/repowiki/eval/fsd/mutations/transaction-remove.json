@@ -1,0 +1,1 @@
+{ "id": "transaction-remove", "type": "transaction", "op": "remove", "path": "transactions", "expectedGate": "REQUIRED_FIELD_MISSING" }

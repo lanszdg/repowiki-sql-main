@@ -1,0 +1,8 @@
+{
+  "case_id": "github-sample",
+  "expected": {
+    "identity.id": "PLSCOPE_HELPER.show_identifiers_in",
+    "identity.outputPath": "fsd/PLSCOPE_HELPER/show_identifiers_in.md",
+    "signature.raw": "PROCEDURE show_identifiers_in(owner_in IN VARCHAR2, name_in IN VARCHAR2, identifier_filter_in IN VARCHAR2, usage_type_in IN VARCHAR2)"
+  }
+}

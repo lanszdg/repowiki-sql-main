@@ -1,0 +1,16 @@
+{"case_id":"missing-trace","fixture":"missing-trace.json","corpus":"negative","source":"local-fixture","role":"schema-negative","expected_error":"SOURCE_TRACE_REQUIRED"}
+{"case_id":"markdown-gap","fixture":"markdown-gap.json","markdown":"markdown-gap.md","corpus":"negative","source":"local-fixture","role":"markdown-negative","expected_error":"FACT_NOT_RENDERED"}
+{"case_id":"missing-trace-02","fixture":"missing-trace.json","corpus":"negative","source":"local-fixture","role":"schema-negative","expected_error":"SOURCE_TRACE_REQUIRED"}
+{"case_id":"missing-trace-03","fixture":"missing-trace.json","corpus":"negative","source":"local-fixture","role":"schema-negative","expected_error":"SOURCE_TRACE_REQUIRED"}
+{"case_id":"missing-trace-04","fixture":"missing-trace.json","corpus":"negative","source":"local-fixture","role":"schema-negative","expected_error":"SOURCE_TRACE_REQUIRED"}
+{"case_id":"missing-trace-05","fixture":"missing-trace.json","corpus":"negative","source":"local-fixture","role":"schema-negative","expected_error":"SOURCE_TRACE_REQUIRED"}
+{"case_id":"missing-trace-06","fixture":"missing-trace.json","corpus":"negative","source":"local-fixture","role":"schema-negative","expected_error":"SOURCE_TRACE_REQUIRED"}
+{"case_id":"missing-trace-07","fixture":"missing-trace.json","corpus":"negative","source":"local-fixture","role":"schema-negative","expected_error":"SOURCE_TRACE_REQUIRED"}
+{"case_id":"missing-trace-08","fixture":"missing-trace.json","corpus":"negative","source":"local-fixture","role":"schema-negative","expected_error":"SOURCE_TRACE_REQUIRED"}
+{"case_id":"markdown-gap-02","fixture":"markdown-gap.json","markdown":"markdown-gap.md","corpus":"negative","source":"local-fixture","role":"markdown-negative","expected_error":"FACT_NOT_RENDERED"}
+{"case_id":"markdown-gap-03","fixture":"markdown-gap.json","markdown":"markdown-gap.md","corpus":"negative","source":"local-fixture","role":"markdown-negative","expected_error":"FACT_NOT_RENDERED"}
+{"case_id":"markdown-gap-04","fixture":"markdown-gap.json","markdown":"markdown-gap.md","corpus":"negative","source":"local-fixture","role":"markdown-negative","expected_error":"FACT_NOT_RENDERED"}
+{"case_id":"markdown-gap-05","fixture":"markdown-gap.json","markdown":"markdown-gap.md","corpus":"negative","source":"local-fixture","role":"markdown-negative","expected_error":"FACT_NOT_RENDERED"}
+{"case_id":"markdown-gap-06","fixture":"markdown-gap.json","markdown":"markdown-gap.md","corpus":"negative","source":"local-fixture","role":"markdown-negative","expected_error":"FACT_NOT_RENDERED"}
+{"case_id":"markdown-gap-07","fixture":"markdown-gap.json","markdown":"markdown-gap.md","corpus":"negative","source":"local-fixture","role":"markdown-negative","expected_error":"FACT_NOT_RENDERED"}
+{"case_id":"markdown-gap-08","fixture":"markdown-gap.json","markdown":"markdown-gap.md","corpus":"negative","source":"local-fixture","role":"markdown-negative","expected_error":"FACT_NOT_RENDERED"}

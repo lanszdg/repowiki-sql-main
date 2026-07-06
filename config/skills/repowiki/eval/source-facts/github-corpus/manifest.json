@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "corpusId": "github-plsql-source-facts-v1",
+  "description": "Public GitHub PL/SQL corpus for Oracle stored procedure source-to-facts acceptance. Golden files are manual sampled facts, not generated from actual outputs.",
+  "cases": [
+    {
+      "id": "oracle-error-mgr",
+      "repo": "https://github.com/oracle-samples/oracle-db-examples",
+      "commit": "f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6",
+      "license": "UPL-1.0",
+      "sampleMode": "github-raw-role-copy",
+      "coverageTags": ["package", "procedure", "DDL", "table-columns", "transaction", "autonomous-transaction"],
+      "sourceFiles": [
+        {
+          "sourceUrl": "https://raw.githubusercontent.com/oracle-samples/oracle-db-examples/f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6/plsql/error-management/basic-error-logging-package.sql",
+          "targetPath": "error_mgr_body.sql"
+        },
+        {
+          "sourceUrl": "https://raw.githubusercontent.com/oracle-samples/oracle-db-examples/f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6/plsql/error-management/basic-error-logging-package.sql",
+          "targetPath": "schema/error_mgr.sql"
+        }
+      ],
+      "golden": "golden/oracle-error-mgr.json"
+    },
+    {
+      "id": "oracle-sql-injection-demo",
+      "repo": "https://github.com/oracle-samples/oracle-db-examples",
+      "commit": "f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6",
+      "license": "UPL-1.0",
+      "sampleMode": "github-raw-role-copy",
+      "coverageTags": ["package", "function", "procedure", "dynamic-sql", "cursor", "select"],
+      "sourceFiles": [
+        {
+          "sourceUrl": "https://raw.githubusercontent.com/oracle-samples/oracle-db-examples/f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6/plsql/dynamic-sql/sql-injection-dangers.sql",
+          "targetPath": "sql_injection_body.sql"
+        }
+      ],
+      "golden": "golden/oracle-sql-injection-demo.json"
+    },
+    {
+      "id": "oracle-forall-bulk-rowcount",
+      "repo": "https://github.com/oracle-samples/oracle-db-examples",
+      "commit": "f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6",
+      "license": "UPL-1.0",
+      "sampleMode": "github-raw-standalone-procedure",
+      "coverageTags": ["procedure", "FORALL", "dynamic-sql", "exception", "transaction"],
+      "sourceFiles": [
+        {
+          "sourceUrl": "https://raw.githubusercontent.com/oracle-samples/oracle-db-examples/f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6/plsql/performance/forall-bulk-rowcount.sql",
+          "targetPath": "func/forall_bulk_rowcount.sql"
+        }
+      ],
+      "golden": "golden/oracle-forall-bulk-rowcount.json"
+    },
+    {
+      "id": "oracle-plscope-helper",
+      "repo": "https://github.com/oracle-samples/oracle-db-examples",
+      "commit": "f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6",
+      "license": "UPL-1.0",
+      "sampleMode": "github-raw-role-copy",
+      "coverageTags": ["package", "procedure", "BULK COLLECT", "dynamic-sql", "select"],
+      "sourceFiles": [
+        {
+          "sourceUrl": "https://raw.githubusercontent.com/oracle-samples/oracle-db-examples/f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6/plsql/code-analysis/plscope-helper-package.sql",
+          "targetPath": "plscope_helper_body.sql"
+        }
+      ],
+      "golden": "golden/oracle-plscope-helper.json"
+    },
+    {
+      "id": "oracle-trigger-predicates",
+      "repo": "https://github.com/oracle-samples/oracle-db-examples",
+      "commit": "f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6",
+      "license": "UPL-1.0",
+      "sampleMode": "github-raw-role-copy",
+      "coverageTags": ["trigger", "DDL", "procedure"],
+      "sourceFiles": [
+        {
+          "sourceUrl": "https://raw.githubusercontent.com/oracle-samples/oracle-db-examples/f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6/plsql/sql-in-plsql/trigger-predicates.sql",
+          "targetPath": "trigger/trigger_predicates.sql"
+        },
+        {
+          "sourceUrl": "https://raw.githubusercontent.com/oracle-samples/oracle-db-examples/f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6/plsql/sql-in-plsql/trigger-predicates.sql",
+          "targetPath": "schema/trigger_predicates.sql"
+        }
+      ],
+      "golden": "golden/oracle-trigger-predicates.json"
+    },
+    {
+      "id": "alexandria-html-util",
+      "repo": "https://github.com/mortenbra/alexandria-plsql-utils",
+      "commit": "ada48755255df1be0bde6708adf243747c0000bd",
+      "license": "MIT",
+      "sampleMode": "github-raw-package",
+      "coverageTags": ["package", "function", "overload"],
+      "sourceFiles": [
+        {
+          "sourceUrl": "https://raw.githubusercontent.com/mortenbra/alexandria-plsql-utils/ada48755255df1be0bde6708adf243747c0000bd/ora/html_util_pkg.pks",
+          "targetPath": "html_util_pkg.pks"
+        },
+        {
+          "sourceUrl": "https://raw.githubusercontent.com/mortenbra/alexandria-plsql-utils/ada48755255df1be0bde6708adf243747c0000bd/ora/html_util_pkg.pkb",
+          "targetPath": "html_util_pkg.pkb"
+        }
+      ],
+      "golden": "golden/alexandria-html-util.json"
+    },
+    {
+      "id": "pljson-dyn",
+      "repo": "https://github.com/pljson/pljson",
+      "commit": "09a54e4e9318af36c6d27f0e7170bd4a376276b2",
+      "license": "MIT",
+      "sampleMode": "github-raw-role-copy",
+      "coverageTags": ["package", "function", "procedure", "dynamic-sql", "DBMS_SQL"],
+      "sourceFiles": [
+        {
+          "sourceUrl": "https://raw.githubusercontent.com/pljson/pljson/09a54e4e9318af36c6d27f0e7170bd4a376276b2/src/addons/pljson_dyn.package.sql",
+          "targetPath": "pljson_dyn_body.sql"
+        }
+      ],
+      "golden": "golden/pljson-dyn.json"
+    },
+    {
+      "id": "oracle-merge-standalone",
+      "repo": "https://github.com/oracle-samples/oracle-db-examples",
+      "commit": "f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6",
+      "license": "UPL-1.0",
+      "sampleMode": "github-raw-standalone-sql-gap",
+      "coverageTags": ["MERGE", "standalone-sql", "known-gap"],
+      "sourceFiles": [
+        {
+          "sourceUrl": "https://raw.githubusercontent.com/oracle-samples/oracle-db-examples/f6b41f4541745cfa69ffd3ed62fe5a7c8423c4a6/optimizer/direct_path/12c/merge.sql",
+          "targetPath": "merge/merge.sql"
+        }
+      ],
+      "golden": "golden/oracle-merge-standalone.json"
+    }
+  ]
+}

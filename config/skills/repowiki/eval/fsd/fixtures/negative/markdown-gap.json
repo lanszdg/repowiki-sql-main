@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "identity": {
+    "id": "GAP_PKG.missing_doc_fact",
+    "packageName": "GAP_PKG",
+    "subprogramName": "missing_doc_fact",
+    "refName": "missing_doc_fact",
+    "kind": "PROCEDURE",
+    "overloadIndex": null,
+    "outputPath": "fsd/GAP_PKG/missing_doc_fact.md"
+  },
+  "signature": { "raw": "PROCEDURE missing_doc_fact", "params": [], "return": null },
+  "tableMappings": [
+    { "tableName": "GAP_TABLE", "operations": ["SELECT"], "columns": ["ID"], "sourceTrace": ["table_facts[0]"] }
+  ],
+  "dependencies": { "calls": [], "calledBy": [], "sequences": [], "constants": [] },
+  "controlFlow": { "nodes": [], "branches": [], "loops": [], "mermaidHint": "" },
+  "exceptions": [],
+  "transactions": { "hasCommit": false, "hasRollback": false, "hasSavepoint": false, "autonomous": false, "springEquivalent": "" },
+  "specialSyntax": [],
+  "manualReview": [],
+  "sourceTrace": [{ "file": "gap.sql", "startLine": 1, "endLine": 20, "fact": "subprogram" }],
+  "coverage": { "requiredSections": ["overview", "tableMappings", "dependencies", "businessRules", "controlFlowAndExceptions", "specialSyntaxMappings"], "factsTotal": 2, "factsCoveredByMarkdown": 0, "gaps": [] }
+}

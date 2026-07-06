@@ -1,0 +1,3 @@
+{
+  "requiredTopLevelFields": ["schemaVersion", "reportType", "status", "strict", "command", "cwd", "inputs", "summary", "ok", "metrics", "failures", "cases"]
+}

@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "caseId": "inventory-source-to-facts",
+  "thresholds": {
+    "default": {
+      "recall": 1,
+      "precision": 1
+    }
+  },
+  "expected": {
+    "packages": [
+      "INVENTORY_PKG"
+    ],
+    "subprograms": [
+      "INVENTORY_PKG.bulk_receive",
+      "INVENTORY_PKG.get_stock"
+    ],
+    "signatures": [
+      "INVENTORY_PKG.bulk_receive|PROCEDURE bulk_receive(p_item_id IN NUMBER, p_qty IN NUMBER, p_result OUT VARCHAR2)",
+      "INVENTORY_PKG.get_stock|FUNCTION get_stock(p_item_id IN NUMBER) RETURN NUMBER"
+    ],
+    "params": [
+      "INVENTORY_PKG.bulk_receive|P_ITEM_ID|IN|NUMBER",
+      "INVENTORY_PKG.bulk_receive|P_QTY|IN|NUMBER",
+      "INVENTORY_PKG.bulk_receive|P_RESULT|OUT|VARCHAR2",
+      "INVENTORY_PKG.get_stock|P_ITEM_ID|IN|NUMBER"
+    ],
+    "returnTypes": [
+      "INVENTORY_PKG.get_stock|NUMBER"
+    ],
+    "tables": [
+      "INVENTORY_PKG.bulk_receive|INV_TXN|INSERT",
+      "INVENTORY_PKG.bulk_receive|INV_AUDIT|INSERT",
+      "INVENTORY_PKG.get_stock|INV_TXN|SELECT"
+    ],
+    "columns": [
+      "INVENTORY_PKG.bulk_receive|INV_TXN|ITEM_ID",
+      "INVENTORY_PKG.bulk_receive|INV_TXN|QTY",
+      "INVENTORY_PKG.bulk_receive|INV_AUDIT|ITEM_ID",
+      "INVENTORY_PKG.bulk_receive|INV_AUDIT|ACTION",
+      "INVENTORY_PKG.get_stock|INV_TXN|ITEM_ID",
+      "INVENTORY_PKG.get_stock|INV_TXN|QTY"
+    ],
+    "calls": [
+      "INVENTORY_PKG.bulk_receive|UTIL_PKG.get_param"
+    ],
+    "sequences": [
+      "INVENTORY_PKG.bulk_receive|INV_TXN_SEQ"
+    ],
+    "constants": [
+      "INVENTORY_PKG.bulk_receive|CONST_PKG.STATUS_OK"
+    ],
+    "controlFlow": [
+      "INVENTORY_PKG.bulk_receive|BRANCH|p_item_id is null",
+      "INVENTORY_PKG.bulk_receive|LOOP|FORALL"
+    ],
+    "exceptions": [
+      "INVENTORY_PKG.bulk_receive|OTHERS|RAISE"
+    ],
+    "transactions": [
+      "INVENTORY_PKG.bulk_receive|COMMIT"
+    ],
+    "specialSyntax": [
+      "INVENTORY_PKG.bulk_receive|FORALL"
+    ]
+  }
+}
