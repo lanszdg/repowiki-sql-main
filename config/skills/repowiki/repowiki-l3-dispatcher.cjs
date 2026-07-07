@@ -162,9 +162,11 @@ function statusLines(text) {
 function writeWorkerChunk(info, streamName, buf, verboseWorkerOutput) {
   const text = String(buf || "");
   if (info.logStream) info.logStream.write(`[${streamName}] ${text}`);
-  for (const line of statusLines(text)) {
-    const writer = /\b(fail|no-slot)\b/.test(line) ? process.stderr : process.stdout;
-    writer.write(`[${info.agentName}] ${line}\n`);
+  if (verboseWorkerOutput) {
+    for (const line of statusLines(text)) {
+      const writer = /\b(fail|no-slot)\b/.test(line) ? process.stderr : process.stdout;
+      writer.write(`[${info.agentName}] ${line}\n`);
+    }
   }
   if (verboseWorkerOutput) {
     const writer = streamName === "stderr" ? process.stderr : process.stdout;
@@ -225,7 +227,9 @@ function spawnWorker(options, seq) {
     logStream.write(`[dispatcher] agent=${agentName} exit code=${code === null ? "" : code} signal=${signal || ""} finished=${new Date().toISOString()}\n`);
     logStream.end();
   });
-  console.log(`[L3-dispatcher] worker-start agent=${agentName} log=${logFile}`);
+  if (options.verboseWorkerOutput) {
+    console.log(`[L3-dispatcher] worker-start agent=${agentName} log=${logFile}`);
+  }
   return info;
 }
 
@@ -311,7 +315,9 @@ async function main() {
     const freshActive = freshActiveCount(active, reflected, options.activeStartupGraceMs);
     const decision = spawnCountForProgress(progress, active.size, reflected, freshActive);
     console.log(`[L3-dispatcher] ${progress.raw}`);
-    console.log(`[L3-dispatcher] action=${decision.action} spawn=${decision.spawnNow || 0} requested=${decision.spawn || 0} active=${active.size} reflected=${decision.reflectedActive || 0} fresh=${decision.freshActive || 0} externalRunning=${decision.externalRunning || 0} reason=${decision.reason}`);
+    if (options.verboseWorkerOutput || options.dryRun) {
+      console.log(`[L3-dispatcher] action=${decision.action} spawn=${decision.spawnNow || 0} requested=${decision.spawn || 0} active=${active.size} reflected=${decision.reflectedActive || 0} fresh=${decision.freshActive || 0} externalRunning=${decision.externalRunning || 0} reason=${decision.reason}`);
+    }
 
     if (decision.action === "done") return;
     if (decision.action === "failed") throw new Error("L3 has failed tasks and no runnable work; inspect scheduler diagnostics");
@@ -339,7 +345,9 @@ async function main() {
             }
           }
           const failed = code !== 0 || !!signal;
-          console.log(`[L3-dispatcher] worker-exit agent=${info.agentName} code=${code === null ? "" : code} signal=${signal || ""}${failed ? ` log=${info.logFile}` : ""}`);
+          if (failed || options.verboseWorkerOutput) {
+            console.log(`[L3-dispatcher] worker-exit agent=${info.agentName} code=${code === null ? "" : code} signal=${signal || ""}${failed ? ` log=${info.logFile}` : ""}`);
+          }
         });
       }
     }

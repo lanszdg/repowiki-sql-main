@@ -1,1 +1,1 @@
-{"case_id":"valid","fixture":"valid.json","markdown":"valid.md","corpus":"ab","source":"local-fixture","role":"ab-smoke"}
+{"case_id":"valid","fixture":"valid.json","markdownFromRenderer":true,"corpus":"ab","source":"local-fixture","role":"ab-smoke"}

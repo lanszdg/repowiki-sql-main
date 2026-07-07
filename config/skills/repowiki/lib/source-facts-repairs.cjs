@@ -186,7 +186,36 @@ function loadSourceFactRepairs(file) {
   };
 }
 
+function overlayFromRepairTickets(repairTickets, sourceFile = "") {
+  const adds = [];
+  const removes = [];
+  for (const ticket of asArray(repairTickets && repairTickets.tickets)) {
+    if (ticket.repairType && ticket.repairType !== "l2-source-facts") continue;
+    const row = {
+      dimension: clean(ticket.dimension),
+      fact: clean(ticket.fact),
+      source: clean(ticket.id || "repair-ticket"),
+      action: clean(ticket.action),
+    };
+    if (!row.dimension || !row.fact) continue;
+    if (ticket.action === "add-missing-fact") {
+      adds.push(row);
+    } else if (ticket.action === "remove-extra-fact" || ticket.action === "remove-pollution") {
+      removes.push(row);
+    }
+  }
+  return {
+    schemaVersion: 1,
+    repairType: "l2-source-facts-overlay",
+    generatedFromRepairTickets: true,
+    sourceRepairTickets: sourceFile,
+    adds,
+    removes,
+  };
+}
+
 module.exports = {
   applySourceFactRepairsToFunction,
   loadSourceFactRepairs,
+  overlayFromRepairTickets,
 };

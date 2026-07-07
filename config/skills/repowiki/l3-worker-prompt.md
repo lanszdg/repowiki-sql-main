@@ -86,9 +86,11 @@ function-doc-guide -> 功能文档说明（MD）
 - 实体关系类字段只使用 `factContext.facts.graph`。这是控制面按当前 task 裁剪后的 L2 图切片，可辅助说明服务-入口-方法-模型-调用关系；禁止读取全量 `entities.json`、`relations.json`、`expected-functions.json`、`topology.json`。
 - 代码索引/实现索引类字段只使用 `factContext.facts.codeIndex`、`factContext.facts.function` 和 `factContext.facts.source` 中已经给出的类名/方法名/路径。`source_file` 只是引用路径，禁止打开或读取源码文件。
 
-8. 写入 `factContext.task.output`。如需要 sidecar metadata，写入 `factContext.task.metadataOutput`。
+8. `function-doc` task 的 `factContext.task.output` 已由控制面预写 draft skeleton。写入前必须先读取这个文件，并以现有 draft 为基础补充/修改；不要从空白文档重写整篇 FSD，不要改动已有章节顺序、表头和确定性事实行。
 
-9. 成功后运行 `commands.done`。失败时运行 `commands.fail`，并把失败原因写入 `--error`。`commands.done` 会校验输出文件存在且非空；如果被拒绝，只修复当前 task 的输出并再次运行当前 task 的 `commands.done`，不要领取其他 task。
+9. 写入 `factContext.task.output`。如需要 sidecar metadata，写入 `factContext.task.metadataOutput`。
+
+10. 成功后运行 `commands.done`。失败时运行 `commands.fail`，并把失败原因写入 `--error`。`commands.done` 会校验输出文件存在且非空；如果被拒绝，只修复当前 task 的输出并再次运行当前 task 的 `commands.done`，不要领取其他 task。
 
 禁止：
 

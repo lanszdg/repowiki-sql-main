@@ -5,6 +5,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const childProcess = require("child_process");
+const { compileFsdFacts } = require("../lib/fsd-facts-compiler.cjs");
 const { renderFsdMarkdown } = require("../lib/fsd-facts-renderer.cjs");
 
 const repoScript = path.join(__dirname, "..", "repowiki-l3-task.cjs");
@@ -65,15 +66,21 @@ function factWithFlowExceptionTransaction() {
   return fact;
 }
 
+function productionDocFact() {
+  return compileFsdFacts({
+    module: "m",
+    impl_qn: "PKG",
+    method: "proc",
+    signature: "PROCEDURE proc",
+    procedure_type: "PROCEDURE",
+    source_file: "pkg.sql",
+    table_facts: [{ table: "T1", operation: "SELECT", columns: ["ID"], sourceTrace: ["table_facts[0]"] }],
+    special_syntax: [{ id: "syn1", type: "FORALL", risk: "medium", sourceTrace: ["special_syntax[0]"] }],
+  });
+}
+
 function oracleSpDoc() {
-  const projected = renderFsdMarkdown(validFact());
-  return projected
-    .replace("## 概览", "## 概览\n### 存储过程功能\n### 参数清单与 Java 类型映射\n### 转换策略\n### 签名\n### 输入类型定义")
-    .replace("## 表结构映射", "## 表结构映射\n### 涉及的表清单\n### 列 → DO 字段映射\n### 跨表关系\n### 特殊列处理")
-    .replace("## 依赖分析", "## 依赖分析\n### 调用的其他子程序\n### 被其他子程序调用\n### 跨包调用 → Service 注入\n### 序列依赖\n### 常量依赖")
-    .replace("## 业务规则", "## 业务规则\n### 校验规则\n### 计算逻辑\n### 状态流转\n### 边界条件")
-    .replace("## 控制流与异常", "## 控制流与异常\n### 流程图\n### 分支逻辑\n### 循环结构\n### 异常处理")
-    .replace("## 特殊语法转化规约", "## 特殊语法转化规约\n### 转化映射\n### 事务边界\n### 需手动审查的构造");
+  return renderFsdMarkdown(productionDocFact());
 }
 
 function setupRepo(status = "pending", options = {}) {
@@ -184,7 +191,7 @@ test("oracle-sp done accepts draft when fsd-facts contract is valid and publishe
   assert.equal(fs.readFileSync(payload.factContext.task.finalOutput, "utf8"), fs.readFileSync(payload.factContext.task.output, "utf8"));
 });
 
-test("oracle-sp done rejects SQL alias pollution in fsd-facts", () => {
+test("oracle-sp soft gate publishes SQL alias pollution and records warning diagnostics", () => {
   const repo = setupRepo("pending", { writeFinal: false });
   const payload = claimTask(repo);
   const polluted = validFact();
@@ -192,9 +199,15 @@ test("oracle-sp done rejects SQL alias pollution in fsd-facts", () => {
   writeJson(path.join(repo, ".repowiki", "fsd-facts", "PKG", "proc.json"), polluted);
   fs.writeFileSync(payload.factContext.task.output, oracleSpDoc().replace("Table: T1", "Table: T1\n- Table: tgt"), "utf8");
   const result = run(["done", repo, "--id", "doc1", "--agent", "tester"]);
-  assert.notEqual(result.status, 0, "done unexpectedly accepted SQL alias pollution");
-  assert.ok(result.stderr.includes("SQL_ALIAS_POLLUTION"), result.stderr);
-  assert.ok(!fs.existsSync(payload.factContext.task.finalOutput), "rejected draft must not publish final docs");
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(fs.existsSync(payload.factContext.task.finalOutput), "soft gate must publish final docs");
+  const reportFile = path.join(repo, ".repowiki", "l3-scheduler", "metadata", "fsd-coverage", "doc1.json");
+  const report = JSON.parse(fs.readFileSync(reportFile, "utf8"));
+  assert.equal(report.ok, true);
+  assert.equal(report.actualOk, false);
+  assert.equal(report.status, "WARN");
+  assert.equal(report.blocking, false);
+  assert.ok(report.failures.some((row) => row.error_code === "SQL_ALIAS_POLLUTION"));
 });
 
 test("oracle-sp progress exposes fsd fact and coverage summary", () => {
@@ -206,8 +219,54 @@ test("oracle-sp progress exposes fsd fact and coverage summary", () => {
   const progress = childProcess.spawnSync(node, [progressScript, repo, "l3", "--line"], { encoding: "utf8" });
   assert.equal(progress.status, 0, progress.stderr);
   assert.ok(progress.stdout.includes("fsdFacts=1/1"), progress.stdout);
-  assert.ok(progress.stdout.includes("fsdCoverage=1/1"), progress.stdout);
+  assert.ok(progress.stdout.includes("fsdDiag=1/1"), progress.stdout);
   assert.ok(progress.stdout.includes("drafts=1/1"), progress.stdout);
+});
+
+test("oracle-sp reaper publishes stale function-doc draft instead of creating fake done", () => {
+  const repo = setupRepo("pending", { writeFinal: false });
+  const payload = claimTask(repo, "worker-a");
+  fs.writeFileSync(payload.factContext.task.output, oracleSpDoc(), "utf8");
+  const stateFile = path.join(repo, ".repowiki", "l3-scheduler", "state.json");
+  const state = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+  state.tasks.doc1.started_at = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  writeJson(stateFile, state);
+
+  const reap = run(["reap", repo]);
+  assert.equal(reap.status, 0, reap.stderr);
+  const after = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+  assert.equal(after.tasks.doc1.status, "done");
+  assert.ok(fs.existsSync(payload.factContext.task.finalOutput), "reaper must publish final docs when accepting draft");
+
+  const progress = childProcess.spawnSync(node, [progressScript, repo, "l3", "--line"], { encoding: "utf8" });
+  assert.equal(progress.status, 0, progress.stderr);
+  assert.ok(progress.stdout.includes("outputs=1/1"), progress.stdout);
+  assert.ok(progress.stdout.includes("fakeDone=0"), progress.stdout);
+});
+
+test("oracle-sp reaper repairs historical fake-done function-doc by publishing draft", () => {
+  const repo = setupRepo("pending", { writeFinal: false });
+  const payload = claimTask(repo, "worker-a");
+  fs.writeFileSync(payload.factContext.task.output, oracleSpDoc(), "utf8");
+  const stateFile = path.join(repo, ".repowiki", "l3-scheduler", "state.json");
+  const state = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+  state.tasks.doc1.status = "done";
+  state.tasks.doc1.agent = "worker-a";
+  state.tasks.doc1.completed_by = "control-plane";
+  state.tasks.doc1.finished_at = new Date().toISOString();
+  writeJson(stateFile, state);
+  assert.ok(!fs.existsSync(payload.factContext.task.finalOutput), "test setup must start with missing final output");
+
+  const reap = run(["reap", repo]);
+  assert.equal(reap.status, 0, reap.stderr);
+  const after = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+  assert.equal(after.tasks.doc1.status, "done");
+  assert.ok(fs.existsSync(payload.factContext.task.finalOutput), "reaper must publish final docs for historical fake-done task");
+
+  const progress = childProcess.spawnSync(node, [progressScript, repo, "l3", "--line"], { encoding: "utf8" });
+  assert.equal(progress.status, 0, progress.stderr);
+  assert.ok(progress.stdout.includes("outputs=1/1"), progress.stdout);
+  assert.ok(progress.stdout.includes("fakeDone=0"), progress.stdout);
 });
 
 test("oracle-sp done writes replay metadata into coverage diagnostics", () => {
@@ -221,7 +280,8 @@ test("oracle-sp done writes replay metadata into coverage diagnostics", () => {
   assert.equal(report.schemaVersion, 1);
   assert.equal(report.reportType, "fsd-coverage");
   assert.equal(report.status, "PASS");
-  assert.equal(report.strict, true);
+  assert.equal(report.strict, false);
+  assert.equal(report.blocking, false);
   assert.ok(report.command.includes("repowiki-l3-task.cjs done"));
   assert.ok(path.isAbsolute(report.cwd), report.cwd);
   assert.ok(report.inputs && report.inputs.fsdFactsFile && report.inputs.outputFile && report.inputs.draftOutputFile);
@@ -232,21 +292,22 @@ test("oracle-sp done writes replay metadata into coverage diagnostics", () => {
   assert.equal(summary.schemaVersion, 1);
   assert.equal(summary.reportType, "fsd-coverage-summary");
   assert.equal(summary.status, "PASS");
-  assert.equal(summary.strict, true);
+  assert.equal(summary.strict, false);
+  assert.equal(summary.blocking, false);
   assert.ok(summary.command.includes("repowiki-l3-task.cjs done"));
   assert.ok(path.isAbsolute(summary.cwd), summary.cwd);
   assert.ok(summary.inputs && summary.inputs.coverageReportsDir);
   assert.ok(summary.summary && summary.summary.reportsTotal === 1);
 });
 
-test("oracle-sp pollution rejection writes failing coverage diagnostics", () => {
+test("oracle-sp strict gate rejects SQL alias pollution and writes failing coverage diagnostics", () => {
   const repo = setupRepo("pending", { writeFinal: false });
   const payload = claimTask(repo);
   const polluted = validFact();
   polluted.tableMappings.push({ tableName: "tgt", operations: ["SELECT"], columns: ["ID"], sourceTrace: ["table_facts[1]"] });
   writeJson(path.join(repo, ".repowiki", "fsd-facts", "PKG", "proc.json"), polluted);
   fs.writeFileSync(payload.factContext.task.output, oracleSpDoc().replace("Table: T1", "Table: T1\n- Table: tgt"), "utf8");
-  const result = run(["done", repo, "--id", "doc1", "--agent", "tester"]);
+  const result = run(["done", repo, "--id", "doc1", "--agent", "tester"], { env: { ...process.env, REPOWIKI_FSD_GATE_MODE: "strict" } });
   assert.notEqual(result.status, 0, "done unexpectedly accepted SQL alias pollution");
   const reportFile = path.join(repo, ".repowiki", "l3-scheduler", "metadata", "fsd-coverage", "doc1.json");
   const report = JSON.parse(fs.readFileSync(reportFile, "utf8"));
@@ -261,29 +322,57 @@ test("oracle-sp done rejection keeps local repair context and exposes it on next
   const fact = factWithFlowExceptionTransaction();
   writeJson(path.join(repo, ".repowiki", "fsd-facts", "PKG", "proc.json"), fact);
   const brokenMarkdown = renderFsdMarkdown(fact)
-    .replace("- FlowNode: n1 | validate input\n", "")
-    .replace("- Exception: OTHERS -> RAISE\n", "")
-    .replace("- Transaction: commit=true, rollback=true, savepoint=false, autonomous=false\n", "");
+    .replace(/^\| n1 \| validate input \|\r?\n/m, "")
+    .replace(/^\| OTHERS \| RAISE \| Java exception \/ rollback \| RAISE \|\r?\n/m, "")
+    .replace(/^- 显式 COMMIT: 是\r?\n/m, "");
   fs.writeFileSync(payload.factContext.task.output, brokenMarkdown, "utf8");
 
-  const done = run(["done", repo, "--id", "doc1", "--agent", "tester"]);
+  const done = run(["done", repo, "--id", "doc1", "--agent", "tester"], { env: { ...process.env, REPOWIKI_FSD_GATE_MODE: "strict" } });
   assert.notEqual(done.status, 0, "done unexpectedly accepted unrendered FSD facts");
   assert.ok(!fs.existsSync(payload.factContext.task.finalOutput), "rejected draft must not publish final docs");
 
   const stateFile = path.join(repo, ".repowiki", "l3-scheduler", "state.json");
   const state = JSON.parse(fs.readFileSync(stateFile, "utf8"));
-  assert.equal(state.tasks.doc1.status, "pending");
+  assert.equal(state.tasks.doc1.status, "repair_pending");
   assert.ok(state.tasks.doc1.repairContext, JSON.stringify(state.tasks.doc1, null, 2));
   assert.equal(state.tasks.doc1.repairContext.repairType, "l3-fsd-markdown");
-  assert.ok(state.tasks.doc1.repairContext.unrenderedFacts.some((row) => row.token.includes("FlowNode: n1")));
-  assert.ok(state.tasks.doc1.repairContext.unrenderedFacts.some((row) => row.token.includes("Exception: OTHERS")));
-  assert.ok(state.tasks.doc1.repairContext.unrenderedFacts.some((row) => row.token.includes("Transaction: commit=true")));
+  assert.ok(state.tasks.doc1.repairContext.unrenderedFacts.some((row) => row.token.includes("template.flowNodes.n1")));
+  assert.ok(state.tasks.doc1.repairContext.unrenderedFacts.some((row) => row.token.includes("template.exceptions.OTHERS")));
+  assert.ok(state.tasks.doc1.repairContext.unrenderedFacts.some((row) => row.token.includes("template.transaction.commit")));
 
   const claim = run(["claim", repo, "--agent", "tester"]);
   assert.equal(claim.status, 0, claim.stderr);
   const repairPayload = JSON.parse(claim.stdout);
   assert.ok(repairPayload.factContext.facts.repairContext, JSON.stringify(repairPayload.factContext, null, 2));
   assert.ok(repairPayload.factContext.facts.repairContext.instruction.includes("Do not rerun from scratch"));
+});
+
+test("oracle-sp repairable FSD rejection is claimed as a repair task, not a fresh pending task", () => {
+  const repo = setupRepo("pending", { writeFinal: false });
+  const payload = claimTask(repo, "worker-a");
+  const fact = factWithFlowExceptionTransaction();
+  writeJson(path.join(repo, ".repowiki", "fsd-facts", "PKG", "proc.json"), fact);
+  const brokenMarkdown = renderFsdMarkdown(fact)
+    .replace(/^\| n1 \| validate input \|\r?\n/m, "")
+    .replace(/^\| OTHERS \| RAISE \| Java exception \/ rollback \| RAISE \|\r?\n/m, "");
+  fs.writeFileSync(payload.factContext.task.output, brokenMarkdown, "utf8");
+
+  const done = run(["done", repo, "--id", "doc1", "--agent", "worker-a"], { env: { ...process.env, REPOWIKI_FSD_GATE_MODE: "strict" } });
+  assert.notEqual(done.status, 0, "done unexpectedly accepted unrendered FSD facts");
+
+  let state = JSON.parse(fs.readFileSync(path.join(repo, ".repowiki", "l3-scheduler", "state.json"), "utf8"));
+  assert.equal(state.tasks.doc1.status, "repair_pending");
+  assert.ok(state.tasks.doc1.repairContext, JSON.stringify(state.tasks.doc1, null, 2));
+
+  const claim = run(["claim", repo, "--agent", "worker-b"]);
+  assert.equal(claim.status, 0, claim.stderr);
+  const repairPayload = JSON.parse(claim.stdout);
+  assert.equal(repairPayload.id, "doc1");
+  assert.ok(repairPayload.factContext.facts.repairContext, JSON.stringify(repairPayload.factContext, null, 2));
+
+  state = JSON.parse(fs.readFileSync(path.join(repo, ".repowiki", "l3-scheduler", "state.json"), "utf8"));
+  assert.equal(state.tasks.doc1.status, "running");
+  assert.equal(state.tasks.doc1.agent, "worker-b");
 });
 
 test("oracle-sp done rejects drafts missing identity, parameter, column, and return facts", () => {
@@ -298,21 +387,22 @@ test("oracle-sp done rejects drafts missing identity, parameter, column, and ret
   };
   writeJson(path.join(repo, ".repowiki", "fsd-facts", "PKG", "proc.json"), fact);
   const brokenMarkdown = renderFsdMarkdown(fact)
-    .replace("- Package: PKG\n", "")
-    .replace("- Param: p_id | IN | NUMBER | BigDecimal\n", "")
-    .replace("  - Column: T1.ID\n", "")
-    .replace("- Return: Oracle VARCHAR2 -> Java String\n", "");
+    .replace(/^\| 所属包 \| PKG \|\r?\n/m, "")
+    .replace(/^\| p_id \| IN \| NUMBER \| BigDecimal \|.*\r?\n/m, "")
+    .replace(/^\| ID \|.*\r?\n/m, "")
+    .replace(/^\| VARCHAR2 \| String \| Function 返回值映射 \|\r?\n/m, "");
   fs.writeFileSync(payload.factContext.task.output, brokenMarkdown, "utf8");
 
-  const done = run(["done", repo, "--id", "doc1", "--agent", "tester"]);
-  assert.notEqual(done.status, 0, "done unexpectedly accepted draft with missing FSD tokens");
+  const done = run(["done", repo, "--id", "doc1", "--agent", "tester"], { env: { ...process.env, REPOWIKI_FSD_GATE_MODE: "strict" } });
+  assert.notEqual(done.status, 0, "done unexpectedly accepted draft with missing FSD template rows");
   assert.ok(!fs.existsSync(payload.factContext.task.finalOutput), "rejected draft must not publish final docs");
 
   const state = JSON.parse(fs.readFileSync(path.join(repo, ".repowiki", "l3-scheduler", "state.json"), "utf8"));
+  assert.equal(state.tasks.doc1.status, "repair_pending");
   assert.ok(state.tasks.doc1.repairContext, JSON.stringify(state.tasks.doc1, null, 2));
   const tokens = state.tasks.doc1.repairContext.unrenderedFacts.map((row) => row.token).join("\n");
-  assert.ok(tokens.includes("Package: PKG"), tokens);
-  assert.ok(tokens.includes("Param: p_id | IN | NUMBER | BigDecimal"), tokens);
-  assert.ok(tokens.includes("Column: T1.ID"), tokens);
-  assert.ok(tokens.includes("Return: Oracle VARCHAR2 -> Java String"), tokens);
+  assert.ok(tokens.includes("template.overview.packageName"), tokens);
+  assert.ok(tokens.includes("template.params.p_id"), tokens);
+  assert.ok(tokens.includes("template.columns.T1.ID"), tokens);
+  assert.ok(tokens.includes("template.return"), tokens);
 });

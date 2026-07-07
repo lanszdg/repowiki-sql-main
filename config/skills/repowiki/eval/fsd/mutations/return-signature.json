@@ -1,1 +1,1 @@
-{ "id": "return-signature", "type": "return", "op": "set", "path": "signature.raw", "value": "FUNCTION bulk_receive RETURN NUMBER", "expectedGate": "FACT_NOT_RENDERED" }
+{ "id": "return-signature", "type": "return", "op": "set", "path": "signature.raw", "value": "FUNCTION bulk_receive RETURN NUMBER", "expectedGate": "TEMPLATE_FACT_ROW_MISSING" }

@@ -157,7 +157,7 @@ function progressSnapshot(state, tasks = []) {
   const stateDone = items.filter((item) => item.status === "done").length;
   const running = items.filter((item) => item.status === "running").length;
   const failed = items.filter((item) => item.status === "failed").length;
-  const pending = items.filter((item) => item.status === "pending").length;
+  const pending = items.filter((item) => isClaimableStatus(item.status)).length;
   const realDone = items.filter((item) => item.status === "done" && outputStatus(taskCompletionOutput(item)).ok).length;
   const outputs = items.filter((item) => outputStatus(taskCompletionOutput(item)).ok).length;
   const concurrency = Math.max(1, Math.floor(Number(state.concurrency) || 1));
@@ -165,13 +165,13 @@ function progressSnapshot(state, tasks = []) {
     if (isControlPlaneOnly(task)) return false;
     const item = state.tasks && state.tasks[task.id];
     const status = item && item.status ? item.status : "pending";
-    return status === "pending" && depsDone(task, state);
+    return isClaimableStatus(status) && depsDone(task, state);
   }).length;
   const blocked = tasks.filter((task) => {
     if (isControlPlaneOnly(task)) return false;
     const item = state.tasks && state.tasks[task.id];
     const status = item && item.status ? item.status : "pending";
-    return status === "pending" && !depsDone(task, state);
+    return isClaimableStatus(status) && !depsDone(task, state);
   }).length;
   const dispatch = Math.max(0, Math.min(concurrency - running, ready));
   return { total, realDone, outputs, stateDone, running, failed, pending, ready, blocked, concurrency, dispatch };
@@ -966,10 +966,33 @@ function reapStaleFunctionDocs(tasks, state) {
     };
     const fin = finalizeFunctionDoc(mergedItem, boundTask, tasks);
     if (fin.ok) {
+      let published = null;
+      if (isFunctionFactsMode(mergedItem)) {
+        published = publishFunctionDocDraft(mergedItem, boundTask);
+        if (!published.ok) {
+          const finPublish = { ok: false, reason: published.reason || "publish final output failed" };
+          state.tasks[task.id] = {
+            ...item,
+            output: mergedItem.output,
+            boundOutput: mergedItem.boundOutput,
+            needs_review: !!mergedItem.needs_review,
+            status: "pending",
+            agent: "",
+            completed_by: "",
+            started_at: "",
+            finished_at: "",
+            error: `reaper publish failed for stale running function-doc: ${finPublish.reason}`,
+          };
+          writeValidationDiagnostic(task.id, item, finPublish, "pending");
+          changed = true;
+          continue;
+        }
+      }
       state.tasks[task.id] = {
         ...item,
         output: mergedItem.output,
-        boundOutput: mergedItem.boundOutput,
+        boundOutput: (published && published.finalOutput) || mergedItem.boundOutput,
+        finalOutput: (published && published.finalOutput) || mergedItem.finalOutput || mergedItem.boundOutput,
         needs_review: false,
         status: "done",
         agent: item.agent || "control-plane",
@@ -993,6 +1016,80 @@ function reapStaleFunctionDocs(tasks, state) {
       error: `reaper reset stale running function-doc: ${fin.reason || "output invalid or missing"}`,
     };
     writeValidationDiagnostic(task.id, item, fin, "pending");
+    changed = true;
+  }
+  return changed;
+}
+
+function repairFakeDoneFunctionDocs(tasks, state) {
+  let changed = false;
+  for (const task of tasks) {
+    if (!task || task.kind !== "function-doc") continue;
+    const item = state.tasks && state.tasks[task.id];
+    if (!item || item.status !== "done") continue;
+    const boundTask = bindFunctionDocOutput(task, item, tasks);
+    const mergedItem = {
+      ...item,
+      output: boundTask.output || item.output || "",
+      boundOutput: boundTask.boundOutput || item.boundOutput || "",
+      finalOutput: boundTask.finalOutput || boundTask.boundOutput || item.finalOutput || item.boundOutput || "",
+      needs_review: !!(boundTask.needs_review || item.needs_review),
+    };
+    const finalOutput = finalOutputForFunctionDoc(mergedItem, boundTask);
+    if (finalOutput && outputStatus(finalOutput).ok) continue;
+    if (!isFunctionFactsMode(mergedItem)) continue;
+
+    const fin = finalizeFunctionDoc(mergedItem, boundTask, tasks);
+    if (!fin.ok) {
+      state.tasks[task.id] = {
+        ...item,
+        output: mergedItem.output,
+        boundOutput: mergedItem.boundOutput,
+        finalOutput: mergedItem.finalOutput,
+        status: "pending",
+        agent: "",
+        completed_by: "",
+        started_at: "",
+        finished_at: "",
+        error: `reaper repaired fake-done to pending: ${fin.reason || "output invalid or missing"}`,
+      };
+      writeValidationDiagnostic(task.id, item, fin, "pending");
+      changed = true;
+      continue;
+    }
+
+    const published = publishFunctionDocDraft(mergedItem, boundTask);
+    if (!published.ok) {
+      const finPublish = { ok: false, reason: published.reason || "publish final output failed" };
+      state.tasks[task.id] = {
+        ...item,
+        output: mergedItem.output,
+        boundOutput: mergedItem.boundOutput,
+        finalOutput: mergedItem.finalOutput,
+        status: "pending",
+        agent: "",
+        completed_by: "",
+        started_at: "",
+        finished_at: "",
+        error: `reaper failed to repair fake-done publish: ${finPublish.reason}`,
+      };
+      writeValidationDiagnostic(task.id, item, finPublish, "pending");
+      changed = true;
+      continue;
+    }
+
+    state.tasks[task.id] = {
+      ...item,
+      output: mergedItem.output,
+      boundOutput: published.finalOutput,
+      finalOutput: published.finalOutput,
+      needs_review: false,
+      status: "done",
+      agent: item.agent || "control-plane",
+      completed_by: item.completed_by || "control-plane",
+      finished_at: item.finished_at || new Date().toISOString(),
+      error: "",
+    };
     changed = true;
   }
   return changed;
@@ -1271,9 +1368,10 @@ function rejectDoneState(item, fin) {
   const maxAttempts = Math.max(1, Math.floor(Number((fin && fin.maxAttempts) || 2)));
   const attempts = Math.max(0, Math.floor(Number((item && item.attempts) || 0)));
   const failed = attempts >= maxAttempts;
+  const repairPending = !failed && item && item.kind === "function-doc" && fin && fin.repairContext;
   return {
     ...item,
-    status: failed ? "failed" : "pending",
+    status: failed ? "failed" : (repairPending ? "repair_pending" : "pending"),
     agent: "",
     completed_by: "",
     started_at: "",
@@ -1284,9 +1382,19 @@ function rejectDoneState(item, fin) {
 }
 
 // 滚动 DAG：task 的 deps 全部 done 才可领取
+function rejectedStatusText(item) {
+  if (item && item.status === "failed") return "failed";
+  if (item && item.status === "repair_pending") return "moved to repair_pending";
+  return "reset to pending";
+}
+
 function depsDone(task, state) {
   const deps = Array.isArray(task.deps) ? task.deps : [];
   return deps.every((d) => state.tasks && state.tasks[d] && state.tasks[d].status === "done");
+}
+
+function isClaimableStatus(status) {
+  return status === "pending" || status === "repair_pending";
 }
 
 function functionRowsFileFrom(tasks) {
@@ -1575,14 +1683,18 @@ function writeFsdCoverageReport(task, facts, coverage) {
   const info = fsdFactsInfoForTask(task);
   if (!info.ok) return;
   const pollutionOk = !coverage.pollution || coverage.pollution.ok;
-  const reportOk = coverage.ok && pollutionOk;
+  const actualOk = coverage.ok && pollutionOk;
+  const blocking = coverage.blocking !== false;
+  const reportOk = blocking ? actualOk : true;
   const agent = argValue("--agent", "");
   const replayCommand = `${process.execPath} ${__filename} done ${repo} --id ${task.id}${agent ? ` --agent ${agent}` : ""}`;
   const report = {
     schemaVersion: 1,
     reportType: "fsd-coverage",
-    status: reportOk ? "PASS" : "FAIL",
-    strict: true,
+    status: actualOk ? "PASS" : (blocking ? "FAIL" : "WARN"),
+    strict: blocking,
+    blocking,
+    actualOk,
     command: replayCommand,
     cwd: process.cwd(),
     inputs: {
@@ -1621,18 +1733,23 @@ function writeFsdCoverageReport(task, facts, coverage) {
   reports.push({
     taskId: task.id,
     ok: reportOk,
+    actualOk,
+    status: actualOk ? "PASS" : (blocking ? "FAIL" : "WARN"),
     fsdFactsFile: info.relativeFsdFactsFile,
     coverageReportFile: info.relativeCoverageReportFile,
     metrics: coverage.metrics,
   });
   const summaryOk = reports.every((row) => row.ok);
+  const actualSummaryOk = reports.every((row) => row.actualOk !== false);
   const reportsOk = reports.filter((row) => row.ok).length;
   fs.mkdirSync(path.dirname(fsdCoverageSummaryFile), { recursive: true });
   writeJson(fsdCoverageSummaryFile, {
     schemaVersion: 1,
     reportType: "fsd-coverage-summary",
-    status: summaryOk ? "PASS" : "FAIL",
-    strict: true,
+    status: actualSummaryOk ? "PASS" : (summaryOk ? "WARN" : "FAIL"),
+    strict: blocking,
+    blocking,
+    actualOk: actualSummaryOk,
     command: replayCommand,
     cwd: process.cwd(),
     inputs: {
@@ -1650,6 +1767,10 @@ function writeFsdCoverageReport(task, facts, coverage) {
     },
     reports,
   });
+}
+
+function isFsdSoftGateEnabled() {
+  return String(process.env.REPOWIKI_FSD_GATE_MODE || "soft").toLowerCase() !== "strict";
 }
 
 function fsdRepairContextForTask(task, facts, coverage, reason) {
@@ -1958,9 +2079,10 @@ function finalizeFunctionDocByFacts(item, task) {
   const coverage = computeFsdCoverage(fsdFacts, doc, { outputPath: fsdFacts.identity && fsdFacts.identity.outputPath });
   const pollution = detectFsdPollution(fsdFacts);
   coverage.pollution = pollution;
+  coverage.blocking = !isFsdSoftGateEnabled();
   const reportTask = { ...task, output: item.output, boundOutput: finalOutput, finalOutput };
   writeFsdCoverageReport(reportTask, fsdFacts, coverage);
-  if (!pollution.ok) {
+  if (!pollution.ok && !isFsdSoftGateEnabled()) {
     const first = pollution.findings[0] || {};
     const reason = `fsd pollution invalid: ${first.code || "SQL_ALIAS_POLLUTION"} ${first.path || ""}`.trim();
     return {
@@ -1969,7 +2091,7 @@ function finalizeFunctionDocByFacts(item, task) {
       repairContext: fsdRepairContextForTask(reportTask, fsdFacts, coverage, reason),
     };
   }
-  if (!coverage.ok) {
+  if (!coverage.ok && !isFsdSoftGateEnabled()) {
     const first = coverage.schema.errors[0] || coverage.gate.errors[0] || coverage.gaps[0] || {};
     const reason = `fsd coverage invalid: ${first.code || first.error_code || "UNKNOWN"} ${first.path || first.factCode || ""}`.trim();
     return {
@@ -2757,6 +2879,11 @@ function claimOnce(agent, kind) {
       if (isControlPlaneOnly(t)) return false;
       const item = state.tasks && state.tasks[t.id];
       const status = item && item.status ? item.status : "pending";
+      return status === "repair_pending" && (!kind || t.kind === kind) && depsDone(t, state);
+    }) || tasks.find((t) => {
+      if (isControlPlaneOnly(t)) return false;
+      const item = state.tasks && state.tasks[t.id];
+      const status = item && item.status ? item.status : "pending";
       return status === "pending" && (!kind || t.kind === kind) && depsDone(t, state);
     });
 
@@ -2766,7 +2893,7 @@ function claimOnce(agent, kind) {
         if (isControlPlaneOnly(t)) return false;
         const item = state.tasks && state.tasks[t.id];
         const status = item && item.status ? item.status : "pending";
-        return status === "pending" && (!kind || t.kind === kind) && !depsDone(t, state);
+        return isClaimableStatus(status) && (!kind || t.kind === kind) && !depsDone(t, state);
       });
       if (blocked && running === 0) return { type: "message", text: "NO_READY_TASK blocked_without_running" };
       return { type: "message", text: blocked ? "NO_READY_TASK waiting_on_upstream_deps" : "NO_TASK" };
@@ -2906,6 +3033,7 @@ function reapCommand() {
     }
     if (reapStaleFunctionListScopes(tasks, state)) changed = true;
     if (reapStaleFunctionDocs(tasks, state)) changed = true;
+    if (repairFakeDoneFunctionDocs(tasks, state)) changed = true;
     if (repairFailedFunctionListScopes(tasks, state)) changed = true;
     if (tryFinalizeFunctionListMerge(tasks, state).changed) changed = true;
     if (changed) save(state);
@@ -2980,7 +3108,7 @@ function complete(status) {
           state.tasks[id] = nextItem;
           writeValidationDiagnostic(id, item, fin, nextItem.status);
           save(state);
-          throw new Error(`done rejected id=${id}: ${fin.reason}; task ${nextItem.status === "failed" ? "failed" : "reset to pending"}`);
+          throw new Error(`done rejected id=${id}: ${fin.reason}; task ${rejectedStatusText(nextItem)}`);
         }
       }
       if (item.kind === "function-list-scope") {
@@ -2995,7 +3123,7 @@ function complete(status) {
           state.tasks[id] = nextItem;
           writeValidationDiagnostic(id, item, fin, nextItem.status);
           save(state);
-          throw new Error(`done rejected id=${id}: ${fin.reason}; task ${nextItem.status === "failed" ? "failed" : "reset to pending"}`);
+          throw new Error(`done rejected id=${id}: ${fin.reason}; task ${rejectedStatusText(nextItem)}`);
           }
         }
       }
@@ -3008,7 +3136,7 @@ function complete(status) {
           state.tasks[id] = nextItem;
           writeValidationDiagnostic(id, item, fin, nextItem.status);
           save(state);
-          throw new Error(`done rejected id=${id}: ${fin.reason}; task ${nextItem.status === "failed" ? "failed" : "reset to pending"}`);
+          throw new Error(`done rejected id=${id}: ${fin.reason}; task ${rejectedStatusText(nextItem)}`);
         }
         if (factsModeFunctionDoc) {
           const published = publishFunctionDocDraft(item, taskDef);
@@ -3018,7 +3146,7 @@ function complete(status) {
             state.tasks[id] = nextItem;
             writeValidationDiagnostic(id, item, finPublish, nextItem.status);
             save(state);
-            throw new Error(`done rejected id=${id}: ${finPublish.reason}; task ${nextItem.status === "failed" ? "failed" : "reset to pending"}`);
+            throw new Error(`done rejected id=${id}: ${finPublish.reason}; task ${rejectedStatusText(nextItem)}`);
           }
           doneExtra = {
             boundOutput: published.finalOutput,

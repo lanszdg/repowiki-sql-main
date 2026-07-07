@@ -2,58 +2,120 @@
 
 ## 概览
 ### 存储过程功能
+| 项目 | 内容 |
+| --- | --- |
+| 子程序名 | bulk_receive |
+| 类型 | PROCEDURE |
+| 所属包 | INVENTORY_PKG |
+| 功能摘要 | 需人工复核：L3 根据事实归纳 |
+| 翻译策略 | 标准 Service + MyBatis Mapper |
 ### 参数清单与 Java 类型映射
+| 参数名 | 方向 | Oracle 类型 | Java 类型 | 说明 |
+| --- | --- | --- | --- | --- |
+| p_item_id | IN | NUMBER | BigDecimal | 无 |
+返回值：无独立 RETURN，按 OUT 参数或无返回处理。
 ### 转换策略
+| 项 | 内容 |
+| --- | --- |
+| 服务映射 | 无 |
+| 参数封装 | 无 |
+| 返回类型 | 无 |
+| 设计模式 | 无 |
+| 异常处理 | 无 |
 ### 签名
+```sql
+PROCEDURE bulk_receive(p_item_id IN NUMBER)
+```
 ### 输入类型定义
-- FactId: INVENTORY_PKG.bulk_receive
-- Package: INVENTORY_PKG
-- Subprogram: bulk_receive
-- Kind: PROCEDURE
-- Signature: PROCEDURE bulk_receive(p_item_id IN NUMBER)
-- Param: p_item_id | IN | NUMBER | BigDecimal
-- Return: None
+无
 
 ## 表结构映射
 ### 涉及的表清单
+| 表名 | 操作类型 | DO 类名 | 说明 |
+| --- | --- | --- | --- |
+| INV_TXN | INSERT | 无 | 无 |
 ### 列 → DO 字段映射
+#### INV_TXN 表 → 
+| 列名 | Oracle 类型 | Java 类型 | Java 字段名 | 可空 | 主键 | 本 SP 使用 |
+| --- | --- | --- | --- | --- | --- | --- |
+| ITEM_ID | UNKNOWN | UNKNOWN | 无 | UNKNOWN | 无 | UNKNOWN |
 ### 跨表关系
+| 关系 | 类型 | 说明 |
+| --- | --- | --- |
+| （无） | （无） | （无） |
 ### 特殊列处理
-- Table: INV_TXN
-  - Operations: INSERT
-  - Operation: INV_TXN.INSERT
-  - Columns: ITEM_ID
-  - Column: INV_TXN.ITEM_ID
+| 表.列 | 特殊类型 | 处理方式 |
+| --- | --- | --- |
+| （无） | （无） | （无） |
 
 ## 依赖分析
 ### 调用的其他子程序
+| Oracle 调用 | 目标包 | 目标子程序 (refName) | 功能 |
+| --- | --- | --- | --- |
+| UTIL_PKG.get_param | UTIL_PKG | get_param | 无 |
 ### 被其他子程序调用
+| 调用方 | 入口 |
+| --- | --- |
+| （无） | （无） |
 ### 跨包调用 → Service 注入
+| 字段 | 类型 | 来源包 | 用途 |
+| --- | --- | --- | --- |
+| （无） | （无） | （无） | （无） |
 ### 序列依赖
+| 序列名 | 用途 |
+| --- | --- |
+| INV_TXN_SEQ | 无 |
 ### 常量依赖
-- Call: UTIL_PKG.get_param
-- Sequence: INV_TXN_SEQ
-- Constant: CONST_PKG.STATUS_OK
+| 常量名 | 所属包 | 值 | 用途 |
+| --- | --- | --- | --- |
+| STATUS_OK | CONST_PKG | OK | 无 |
 
 ## 业务规则
 ### 校验规则
+| 规则 ID | 类别 | 描述 | Oracle 位置 | Java 实现 |
+| --- | --- | --- | --- | --- |
+| （无） | （无） | （无） | （无） | （无） |
 ### 计算逻辑
+| 逻辑 ID | 描述 | Oracle 表达式 | Java 实现 |
+| --- | --- | --- | --- |
+| （无） | （无） | （无） | （无） |
 ### 状态流转
+| 转换 | 条件 | 操作 |
+| --- | --- | --- |
+| （无） | （无） | （无） |
 ### 边界条件
-- ManualReview: review-forall-1 -> forall-1 (medium)
-  - Reason: FORALL requires migration review
+| 条件 | 处理方式 | Oracle 行为 | Java 映射 |
+| --- | --- | --- | --- |
+| （无） | （无） | （无） | （无） |
 
 ## 控制流与异常
 ### 流程图
+本子程序控制流由下方分支、循环和异常表描述。
 ### 分支逻辑
+| 分支 ID | 条件 | 真分支 | 假分支 | Oracle 行号 |
+| --- | --- | --- | --- | --- |
+| （无） | （无） | （无） | （无） | （无） |
 ### 循环结构
+| 循环 ID | 类型 | Oracle 构造 | Java 映射 | 退出条件 |
+| --- | --- | --- | --- | --- |
+| （无） | （无） | （无） | （无） | （无） |
 ### 异常处理
-- Transaction: commit=false, rollback=false, savepoint=false, autonomous=false
-- None
+| 异常 | Oracle 处理 | Java 映射 | 处理方式 |
+| --- | --- | --- | --- |
+| （无） | （无） | （无） | （无） |
 
 ## 特殊语法转化规约
 ### 转化映射
+| Oracle 构造 | 位置 | Java/MyBatis 等价 | 风险 |
+| --- | --- | --- | --- |
+| FORALL | 无 | 需人工复核 | medium |
 ### 事务边界
+- 显式 COMMIT: 否
+- 显式 ROLLBACK: 否
+- SAVEPOINT: 否
+- 自治事务: 否
+- Spring 等价: 由调用方或 @Transactional 控制事务
 ### 需手动审查的构造
-- Syntax: forall-1 | FORALL | risk=medium
-- SourceTrace: pkg/inventory_pkg.sql:1-80
+| 构造 | 位置 | 原因 | 建议 |
+| --- | --- | --- | --- |
+| FORALL | 无 | FORALL requires migration review | 迁移时人工确认等价语义 |

@@ -3,7 +3,7 @@
 const assert = require("assert");
 const { compileFsdFacts } = require("../lib/fsd-facts-compiler.cjs");
 const { renderFsdMarkdown } = require("../lib/fsd-facts-renderer.cjs");
-const { validateFsdMarkdown } = require("../lib/fsd-facts-gate.cjs");
+const { validateFsdMarkdown, classifyFsdMarkdownGate } = require("../lib/fsd-facts-gate.cjs");
 
 function sampleFact() {
   return compileFsdFacts({
@@ -49,6 +49,51 @@ test("accepts renderer output", () => {
   assert.deepEqual(validateFsdMarkdown(fact, markdown), { ok: true, errors: [] });
 });
 
+test("accepts renderer output with multiline SQL signature", () => {
+  const fact = compileFsdFacts({
+    package_name: "__STANDALONE__",
+    method: "fn_abc_class",
+    procedure_type: "FUNCTION",
+    signature: "FUNCTION fn_abc_class(p_cum_pct in number,\n    p_a_pct   in number default 0.80,\n    p_b_pct   in number default 0.95) RETURN varchar2",
+    oracle_params: [
+      { name: "p_cum_pct", direction: "IN", oracle_type: "number", java_type: "BigDecimal" },
+      { name: "p_a_pct", direction: "IN", oracle_type: "number default 0.80", java_type: "BigDecimal" },
+      { name: "p_b_pct", direction: "IN", oracle_type: "number default 0.95", java_type: "BigDecimal" },
+    ],
+    return_type: "varchar2",
+    return_java_type: "String",
+    source_file: "func/fn_abc_class.sql",
+  });
+  const markdown = renderFsdMarkdown(fact);
+  assert.ok(markdown.includes(fact.signature.raw), "renderer must preserve multiline signature block");
+  assert.deepEqual(validateFsdMarkdown(fact, markdown), { ok: true, errors: [] });
+});
+
+test("classifies enriched UNKNOWN template values as non-blocking", () => {
+  const fact = compileFsdFacts({
+    package_name: "ITEM_PKG",
+    method: "find_item",
+    procedure_type: "FUNCTION",
+    signature: "FUNCTION find_item(p_item_id IN NUMBER) RETURN VARCHAR2",
+    oracle_params: [{ name: "p_item_id", direction: "IN", oracle_type: "NUMBER", java_type: "UNKNOWN" }],
+    return_type: "VARCHAR2",
+    return_java_type: "UNKNOWN",
+    table_facts: [{
+      table: "ITEM_MASTER",
+      operation: "SELECT",
+      columns: [{ name: "ITEM_ID", oracleType: "UNKNOWN", javaType: "UNKNOWN", nullable: "UNKNOWN", primaryKey: "", usedByCurrentSp: "UNKNOWN" }],
+      sourceTrace: ["table_facts[0]"],
+    }],
+    source_file: "pkg/item_pkg.sql",
+  });
+  const markdown = renderFsdMarkdown(fact)
+    .replace("| p_item_id | IN | NUMBER | UNKNOWN |", "| p_item_id | IN | NUMBER | BigDecimal |")
+    .replace("| VARCHAR2 | UNKNOWN | Function", "| VARCHAR2 | String | Function")
+    .replace("| ITEM_ID | UNKNOWN | UNKNOWN |  | UNKNOWN |  | UNKNOWN |", "| ITEM_ID | NUMBER | BigDecimal | itemId | N | Y | yes |");
+  const result = classifyFsdMarkdownGate(fact, markdown);
+  assert.equal(result.hardOk, true, JSON.stringify(result, null, 2));
+});
+
 test("rejects missing section", () => {
   const fact = sampleFact();
   const markdown = renderFsdMarkdown(fact).replace(/## 依赖分析[\s\S]*?(?=## 业务规则)/, "");
@@ -63,19 +108,19 @@ test("rejects numbered headings", () => {
 
 test("rejects facts omitted from Markdown", () => {
   const fact = sampleFact();
-  const markdown = renderFsdMarkdown(fact).replace("INV_TXN", "");
-  assertError(validateFsdMarkdown(fact, markdown), "FACT_NOT_RENDERED");
+  const markdown = renderFsdMarkdown(fact).replace(/INV_TXN/g, "");
+  assertError(validateFsdMarkdown(fact, markdown), "TEMPLATE_FACT_ROW_MISSING");
 });
 
 test("rejects omitted identity, parameter, and table column facts from Markdown", () => {
   const fact = sampleFact();
   const markdown = renderFsdMarkdown(fact)
-    .replace("- Package: INVENTORY_PKG\n", "")
-    .replace("- Subprogram: bulk_receive\n", "")
-    .replace("- Kind: PROCEDURE\n", "")
-    .replace("- Param: p_item_id | IN | NUMBER | BigDecimal\n", "")
-    .replace(/  - Columns: ITEM_ID\n/, "");
-  assertError(validateFsdMarkdown(fact, markdown), "FACT_NOT_RENDERED");
+    .replace(/^\| 所属包 \| INVENTORY_PKG \|\r?\n/m, "")
+    .replace(/^\| 子程序名 \| bulk_receive \|\r?\n/m, "")
+    .replace(/^\| 类型 \| PROCEDURE \|\r?\n/m, "")
+    .replace(/^\| p_item_id \| IN \| NUMBER \| BigDecimal \|.*\r?\n/m, "")
+    .replace(/^\| ITEM_ID \|.*\r?\n/m, "");
+  assertError(validateFsdMarkdown(fact, markdown), "TEMPLATE_FACT_ROW_MISSING");
 });
 
 test("rejects omitted function return mapping from Markdown", () => {
@@ -90,25 +135,25 @@ test("rejects omitted function return mapping from Markdown", () => {
     table_facts: [],
     source_file: "pkg/inventory_pkg.sql",
   });
-  const markdown = renderFsdMarkdown(fact).replace("- Return: Oracle NUMBER -> Java BigDecimal\n", "");
-  assertError(validateFsdMarkdown(fact, markdown), "FACT_NOT_RENDERED");
+  const markdown = renderFsdMarkdown(fact).replace(/^\| NUMBER \| BigDecimal \| Function 返回值映射 \|\r?\n/m, "");
+  assertError(validateFsdMarkdown(fact, markdown), "TEMPLATE_FACT_ROW_MISSING");
 });
 
 test("rejects omitted control-flow facts from Markdown", () => {
   const fact = sampleFact();
   const markdown = renderFsdMarkdown(fact)
-    .replace("- FlowNode: n1 | validate input\n", "")
-    .replace("- Branch: b1 | p_item_id is null\n", "")
-    .replace("- Loop: l1 | FOR_LOOP\n", "");
-  assertError(validateFsdMarkdown(fact, markdown), "FACT_NOT_RENDERED");
+    .replace(/^\| n1 \| validate input \|\r?\n/m, "")
+    .replace(/^\| b1 \| p_item_id is null \|.*\r?\n/m, "")
+    .replace(/^\| l1 \| FOR_LOOP \|.*\r?\n/m, "");
+  assertError(validateFsdMarkdown(fact, markdown), "TEMPLATE_FACT_ROW_MISSING");
 });
 
 test("rejects omitted exception and transaction facts from Markdown", () => {
   const fact = sampleFact();
   const markdown = renderFsdMarkdown(fact)
-    .replace("- Exception: OTHERS -> RAISE\n", "")
-    .replace("- Transaction: commit=true, rollback=true, savepoint=false, autonomous=false\n", "");
-  assertError(validateFsdMarkdown(fact, markdown), "FACT_NOT_RENDERED");
+    .replace(/^\| OTHERS \| RAISE \| Java exception \/ rollback \| RAISE \|\r?\n/m, "")
+    .replace(/^- 显式 COMMIT: 是\r?\n/m, "");
+  assertError(validateFsdMarkdown(fact, markdown), "TEMPLATE_FACT_ROW_MISSING");
 });
 
 test("rejects orphan structural facts in Markdown", () => {

@@ -323,21 +323,15 @@ function runPlsqlL1Producer() {
     process.exit(2);
   }
   console.log("[codegraph-init] PL/SQL repo detected, running plsql-l1-producer instead of codegraph");
-  const r = cp.spawnSync(process.execPath, [producerScript, repo], {
-    cwd: repo,
-    encoding: "utf8",
-    shell: false,
-    maxBuffer: 16 * 1024 * 1024,
-  });
-  if (r.status !== 0) {
-    console.error(`[codegraph-init] plsql-l1-producer failed (exit ${r.status})`);
-    console.error(r.stderr || "");
+  let data;
+  try {
+    const producer = require(producerScript);
+    data = producer.produce(repo);
+  } catch (e) {
+    console.error(`[codegraph-init] plsql-l1-producer failed: ${e && e.stack || e}`);
     process.exit(1);
   }
-  console.log(r.stdout || "");
   // 写 state done
-  const producer = require(producerScript);
-  const data = producer.produce(repo);
   writeJson(stateFile, {
     status: "done",
     repo,

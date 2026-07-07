@@ -55,8 +55,10 @@ function fsdCoverageStats(rows) {
   const fsdRows = rows.filter((row) => Boolean(fsdFactsPathForOutput(rowOutput(row))));
   const factsDone = fsdRows.filter((row) => exists(fsdFactsPathForOutput(rowOutput(row)))).length;
   const summary = readJson(fsdCoverageSummaryFile, { reports: [] });
-  const okReports = Array.isArray(summary.reports) ? summary.reports.filter((row) => row && row.ok).length : 0;
-  return { total: fsdRows.length, factsDone, coverageDone: okReports };
+  const reports = Array.isArray(summary.reports) ? summary.reports : [];
+  const okReports = reports.filter((row) => row && row.ok).length;
+  const warnReports = reports.filter((row) => row && row.ok && row.actualOk === false).length;
+  return { total: fsdRows.length, factsDone, diagDone: okReports, warnReports };
 }
 
 function progressBar(done, total, width = 24) {
@@ -326,7 +328,9 @@ function reportL3() {
   const realDone = realDoneRows.length;
   const fakeDone = fakeDoneRows.length;
   const fsdStats = fsdCoverageStats(rows);
-  const fsdSummary = fsdStats.total > 0 ? ` fsdFacts=${fsdStats.factsDone}/${fsdStats.total} fsdCoverage=${fsdStats.coverageDone}/${fsdStats.total}` : "";
+  const fsdSummary = fsdStats.total > 0
+    ? ` fsdFacts=${fsdStats.factsDone}/${fsdStats.total} fsdDiag=${fsdStats.diagDone}/${fsdStats.total}${fsdStats.warnReports ? ` fsdStrictWarn=${fsdStats.warnReports}/${fsdStats.total}` : ""}`
+    : "";
 
   if (lineOnly) {
     const allDone = total > 0 && realDone === total && stateDone === total && failed === 0 && fakeDone === 0;

@@ -49,26 +49,27 @@ test("renders key contract facts into Markdown", () => {
   for (const token of [
     "INVENTORY_PKG.bulk_receive",
     "PROCEDURE bulk_receive",
-    "Package: INVENTORY_PKG",
-    "Subprogram: bulk_receive",
-    "Kind: PROCEDURE",
-    "Param: p_item_id | IN | NUMBER | BigDecimal",
+    "| 所属包 | INVENTORY_PKG |",
+    "| 类型 | PROCEDURE |",
+    "| p_item_id | IN | NUMBER | BigDecimal |",
     "INV_TXN",
-    "Column: INV_TXN.ITEM_ID",
+    "InvTxnDO",
+    "| ITEM_ID |",
     "UTIL_PKG.get_param",
     "INV_TXN_SEQ",
-    "CONST_PKG.STATUS_OK",
-    "FlowNode: n1 | validate input",
-    "Branch: b1 | p_item_id is null",
-    "Loop: l1 | FOR_LOOP",
-    "Exception: OTHERS -> RAISE",
-    "Transaction: commit=true, rollback=true, savepoint=false, autonomous=false",
+    "| STATUS_OK | CONST_PKG | OK |",
+    "| n1 | validate input |",
+    "| b1 | p_item_id is null |",
+    "| l1 | FOR_LOOP |",
+    "| OTHERS | RAISE | Java exception / rollback | RAISE |",
+    "- 显式 COMMIT: 是",
     "FORALL",
-    "review-forall-1",
-    "pkg/inventory_pkg.sql",
+    "FORALL requires migration review",
   ]) {
     assert.ok(markdown.includes(token), `missing token ${token}`);
   }
+  assert.ok(!/^- FactId:/m.test(markdown), markdown);
+  assert.ok(!/^- SourceTrace:/m.test(markdown), markdown);
 });
 
 test("renders function return mapping into Markdown", () => {
@@ -82,7 +83,7 @@ test("renders function return mapping into Markdown", () => {
     return_java_type: "BigDecimal",
     source_file: "pkg/inventory_pkg.sql",
   }));
-  assert.ok(markdown.includes("Return: Oracle NUMBER -> Java BigDecimal"), markdown);
+  assert.ok(markdown.includes("| NUMBER | BigDecimal | Function 返回值映射 |"), markdown);
 });
 
 test("renders placeholder text for empty sections", () => {
@@ -95,5 +96,5 @@ test("renders placeholder text for empty sections", () => {
   fact.specialSyntax = [];
   fact.manualReview = [];
   const markdown = renderFsdMarkdown(fact);
-  assert.ok(markdown.includes("- None"));
+  assert.ok(markdown.includes("（无）"));
 });

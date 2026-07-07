@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const { validateFsdFacts } = require("./lib/fsd-facts-schema.cjs");
 const { computeFsdCoverage, detectFsdPollution } = require("./lib/fsd-facts-coverage.cjs");
+const { renderFsdMarkdown } = require("./lib/fsd-facts-renderer.cjs");
 
 function parseArgs(argv) {
   const args = {};
@@ -90,13 +91,14 @@ function readManifest(manifestFile, inputRoot, caseId) {
     const rowCase = row.case_id || row.id || (row.fixture && basenameCaseId(row.fixture));
     if (wanted && rowCase !== wanted && String(rowCase).split(":").pop() !== wanted) continue;
     const fixture = path.isAbsolute(row.fixture) ? row.fixture : path.join(root, row.fixture);
-    const markdown = row.markdown
+    const markdownFromRenderer = row.markdownFromRenderer === true || row.markdown === "@rendered";
+    const markdown = row.markdown && !markdownFromRenderer
       ? (path.isAbsolute(row.markdown) ? row.markdown : path.join(root, row.markdown))
       : pairedMarkdownFile(fixture);
     const golden = row.golden
       ? (path.isAbsolute(row.golden) ? row.golden : path.resolve(path.dirname(manifestPath), row.golden))
       : "";
-    entries.push({ ...row, case_id: rowCase, fixture, markdown, golden, manifest: manifestPath });
+    entries.push({ ...row, case_id: rowCase, fixture, markdown, markdownFromRenderer, golden, manifest: manifestPath });
   }
   return entries;
 }
@@ -175,14 +177,20 @@ function finishReport(report, args, reportName) {
 function loadFactCases(args) {
   const manifestEntries = readManifest(args.manifest, args.input, args.case);
   if (manifestEntries.length) {
-    return manifestEntries.map((entry) => ({
-      file: entry.fixture,
-      caseId: entry.case_id || basenameCaseId(entry.fixture),
-      markdownFile: entry.markdown,
-      golden: entry.golden,
-      manifest: entry,
-      facts: readJson(entry.fixture),
-    }));
+    return manifestEntries.map((entry) => {
+      const facts = readJson(entry.fixture);
+      const markdownText = entry.markdownFromRenderer ? renderFsdMarkdown(facts) : null;
+      return {
+        file: entry.fixture,
+        caseId: entry.case_id || basenameCaseId(entry.fixture),
+        markdownFile: entry.markdownFromRenderer ? "" : entry.markdown,
+        markdownSource: entry.markdownFromRenderer ? "production-renderer" : "file",
+        markdownText,
+        golden: entry.golden,
+        manifest: entry,
+        facts,
+      };
+    });
   }
   const files = filterCase(collectJsonFiles(args.input), args.case);
   return files.map((file) => ({ file, caseId: basenameCaseId(file), markdownFile: pairedMarkdownFile(file), facts: readJson(file) }));
@@ -206,6 +214,11 @@ function evaluateMarkdownCoverage(args) {
   const failures = [];
   let factsTotal = 0;
   let coveredTotal = 0;
+  let templateRequiredItemsTotal = 0;
+  let templateRequiredItemsCovered = 0;
+  let unrenderedFactsTotal = 0;
+  let orphanMarkdownFactsTotal = 0;
+  let diagnosticTokenGapsTotal = 0;
   const markdownCoverage = {
     factsToMarkdown: [],
     markdownToFacts: [],
@@ -214,15 +227,21 @@ function evaluateMarkdownCoverage(args) {
   };
   for (const item of loadFactCases(args)) {
     const markdownFile = item.markdownFile || pairedMarkdownFile(item.file);
-    if (!fs.existsSync(markdownFile)) {
+    const hasRenderedMarkdown = typeof item.markdownText === "string";
+    if (!hasRenderedMarkdown && !fs.existsSync(markdownFile)) {
       cases.push({ case_id: item.caseId, file: item.file, markdownFile, ok: false, manifest: item.manifest || null });
       failures.push(makeFailure(item.caseId, "MARKDOWN_MISSING", markdownFile, "paired Markdown fixture is missing"));
       continue;
     }
-    const markdown = fs.readFileSync(markdownFile, "utf8");
+    const markdown = hasRenderedMarkdown ? item.markdownText : fs.readFileSync(markdownFile, "utf8");
     const result = computeFsdCoverage(item.facts, markdown, { outputPath: item.facts.identity && item.facts.identity.outputPath });
     factsTotal += result.metrics.factsTotal;
     coveredTotal += result.metrics.factsCoveredByMarkdown;
+    templateRequiredItemsTotal += result.metrics.templateRequiredItemsTotal || 0;
+    templateRequiredItemsCovered += result.metrics.templateRequiredItemsCovered || 0;
+    unrenderedFactsTotal += (result.markdownCoverage.unrenderedFacts || []).length;
+    orphanMarkdownFactsTotal += (result.markdownCoverage.orphanMarkdownFacts || []).length;
+    diagnosticTokenGapsTotal += (result.markdownCoverage.diagnosticTokenGaps || []).length;
     for (const key of Object.keys(markdownCoverage)) {
       for (const row of result.markdownCoverage[key] || []) {
         markdownCoverage[key].push({ case_id: item.caseId, ...row });
@@ -232,6 +251,7 @@ function evaluateMarkdownCoverage(args) {
       case_id: item.caseId,
       file: item.file,
       markdownFile,
+      markdownSource: item.markdownSource || "file",
       manifest: item.manifest || null,
       ok: result.ok,
       metrics: result.metrics,
@@ -248,6 +268,12 @@ function evaluateMarkdownCoverage(args) {
     factsTotal,
     factsCoveredByMarkdown: coveredTotal,
     coverageRatio: factsTotal === 0 ? 1 : coveredTotal / factsTotal,
+    templateRequiredItemsTotal,
+    templateRequiredItemsCovered,
+    templateDepthRatio: templateRequiredItemsTotal === 0 ? 1 : templateRequiredItemsCovered / templateRequiredItemsTotal,
+    unrenderedFactsTotal,
+    orphanMarkdownFactsTotal,
+    diagnosticTokenGapsTotal,
   });
   report.markdownCoverage = markdownCoverage;
   return report;
@@ -377,7 +403,9 @@ function evaluateMutation(args) {
   const cases = [];
   for (const item of loadFactCases(args)) {
     const baseMarkdownFile = item.markdownFile || pairedMarkdownFile(item.file);
-    const baseMarkdown = fs.existsSync(baseMarkdownFile) ? fs.readFileSync(baseMarkdownFile, "utf8") : "";
+    const baseMarkdown = typeof item.markdownText === "string"
+      ? item.markdownText
+      : fs.existsSync(baseMarkdownFile) ? fs.readFileSync(baseMarkdownFile, "utf8") : "";
     for (const file of mutationFiles) {
       const mutation = readJson(file);
       const mutated = mutation.target === "markdown" ? clone(item.facts) : applyMutation(item.facts, mutation);
@@ -477,6 +505,12 @@ function evaluateAll(args) {
     markdownOk: markdown.ok,
     pollutionOk: pollution.ok,
     coverageRatio: markdown.metrics.coverageRatio,
+    templateRequiredItemsTotal: markdown.metrics.templateRequiredItemsTotal,
+    templateRequiredItemsCovered: markdown.metrics.templateRequiredItemsCovered,
+    templateDepthRatio: markdown.metrics.templateDepthRatio,
+    unrenderedFactsTotal: markdown.metrics.unrenderedFactsTotal,
+    orphanMarkdownFactsTotal: markdown.metrics.orphanMarkdownFactsTotal,
+    diagnosticTokenGapsTotal: markdown.metrics.diagnosticTokenGapsTotal,
   });
 }
 

@@ -1,1 +1,1 @@
-{ "id": "params-signature", "type": "params", "op": "set", "path": "signature.raw", "value": "PROCEDURE bulk_receive(p_missing IN VARCHAR2)", "expectedGate": "FACT_NOT_RENDERED" }
+{ "id": "params-signature", "type": "params", "op": "set", "path": "signature.raw", "value": "PROCEDURE bulk_receive(p_missing IN VARCHAR2)", "expectedGate": "TEMPLATE_FACT_ROW_MISSING" }

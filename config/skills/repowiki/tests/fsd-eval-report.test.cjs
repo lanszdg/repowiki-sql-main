@@ -83,6 +83,10 @@ test("strict eval reports include replay metadata required by final acceptance",
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const report = readJson(path.join(out, "fsd-coverage.json"));
   assertReplayFields(report, "facts-eval");
+  assert.equal(report.metrics.templateDepthRatio, 1);
+  assert.equal(report.metrics.templateRequiredItemsTotal > 0, true);
+  assert.equal(report.metrics.unrenderedFactsTotal, 0);
+  assert.equal(report.metrics.orphanMarkdownFactsTotal, 0);
 });
 
 test("markdown coverage report exposes bidirectional fact mapping fields", () => {
@@ -98,9 +102,18 @@ test("markdown coverage report exposes bidirectional fact mapping fields", () =>
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const report = readJson(path.join(out, "fsd-markdown-coverage.json"));
   assertReplayFields(report, "markdown-coverage");
+  assert.equal(report.metrics.templateDepthRatio, 1);
+  assert.equal(report.metrics.unrenderedFactsTotal, 0);
+  assert.equal(report.metrics.orphanMarkdownFactsTotal, 0);
   assert.ok(report.markdownCoverage && typeof report.markdownCoverage === "object");
   assert.ok(Array.isArray(report.markdownCoverage.factsToMarkdown));
   assert.ok(Array.isArray(report.markdownCoverage.markdownToFacts));
   assert.ok(Array.isArray(report.markdownCoverage.orphanMarkdownFacts));
   assert.ok(Array.isArray(report.markdownCoverage.unrenderedFacts));
+});
+
+test("local positive Markdown fixture is production renderer output, not stale debug tokens", () => {
+  const markdown = fs.readFileSync(path.join(evalRoot, "fixtures", "local", "valid.md"), "utf8");
+  assert.ok(!/^\s*- (FactId|Package|Subprogram|Kind|Signature|Param|Return|Table|Operation|Column|Call|Sequence|Constant|Syntax|FlowNode|Branch|Loop|Exception|Transaction|ManualReview|SourceTrace):/m.test(markdown));
+  assert.ok(markdown.includes("| 参数名 | 方向 | Oracle 类型 | Java 类型 | 说明 |"));
 });
