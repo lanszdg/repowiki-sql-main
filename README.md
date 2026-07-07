@@ -1,6 +1,10 @@
 # Repowiki SQL Main
 
-Repowiki SQL Main 是 Oracle PL/SQL 存储过程到中间 FSD 的端到端链路。它只聚焦存过迁移前的 FSD 事实抽取、文档生成和验收，不包含 Dubbo、工行功能清单、UA 或 Java 生成链路。
+Repowiki SQL Main 是面向 lingxicode 离线包的 Oracle PL/SQL 存过 FSD 技能插件包。它只聚焦存过迁移前的 FSD 事实抽取、文档生成和验收，不包含 Dubbo、工行功能清单、UA 或 Java 生成链路。
+
+> 重要：本项目不是独立 App。运行前必须把本包内容合并到 lingxicode 根目录下，并从 lingxicode 根目录执行命令。
+> 不能假设使用方已有 codegraph、opencode、parsers 或 PL/SQL parser 依赖；这些运行时依赖必须由本发布包随包携带。
+> 使用方不需要、也不应该再去下载 codegraph/opencode/parsers。缺少任一必需运行时文件，都应视为发布包制作不完整，需要重新补齐发布包。
 
 ## 目标
 
@@ -46,6 +50,18 @@ flowchart LR
 ## 目录说明
 
 ```text
+config/skills/repowiki/SKILL.md      主 Skill 入口；lingxicode 识别 repowiki 从这里开始
+config/skills/wiki-l3-oracle-sp/     Oracle 存过 FSD 业务规约包；由 scheduler 按 oracle-sp profile 自动加载
+
+config/bin/codegraph/
+  node.exe                          CodeGraph/Node 运行时；必须随包携带
+  dist/bin/codegraph.js             CodeGraph CLI；必须随包携带
+
+bin/opencode.exe                    L3 worker 默认 runner；必须随包携带，使用 Git LFS 存储
+lingxicode.bat                      离线启动脚本，设置 parsers/codegraph/opencode config 环境变量
+config/opencode.json                LLM provider/model 配置；可由用户按环境配置
+parsers/                            CodeGraph parser 资源；必须随包携带
+
 config/skills/repowiki/
   repowiki-run.cjs                 端到端编排入口
   repowiki-codegraph-init.cjs      L1 启动入口；PL/SQL 仓库会转到 plsql-l1-producer
@@ -63,10 +79,10 @@ config/skills/repowiki/
   profiles/oracle-sp.json          存过 profile
   eval/                            正负例、golden、mutation、GitHub corpus 验收集
   tests/                           自动化测试
-  vendor/                          离线依赖，包含 node_modules
+  vendor/                          PL/SQL parser 离线依赖，必须包含 node_modules
 
 config/skills/wiki-l3-oracle-sp/
-  SKILL.md                         存过 FSD skill 总规约
+  SKILL.md                         存过 FSD 业务规约；不是手工运行入口
   rules/                           FSD 生成、控制流、转化映射规则
   templates/                       FSD 模板
   validation.json                  存过 FSD 语义校验口径
@@ -74,9 +90,36 @@ config/skills/wiki-l3-oracle-sp/
 
 ## 离线依赖
 
-本仓保留完整 `config/skills/repowiki/vendor/node_modules`，用于本地离线直接执行 PL/SQL parser。正常情况下不需要联网安装依赖。
+本包的离线运行依赖分两类，均应由发布包提供：
 
-如需重新安装 vendor 依赖：
+1. 插件内依赖：`config/skills/repowiki/vendor/node_modules`，用于本地离线执行 PL/SQL parser。
+2. lingxicode 运行时依赖：`config/bin/codegraph`、`bin/opencode.exe`、`lingxicode.bat`、`parsers`、`config/opencode.json`。
+
+发布给其他 lingxicode 环境时，不能只提供 `config/skills`。很多目标环境没有 codegraph/opencode，这些依赖必须随本包一起提供。若以下检查失败，说明当前包不是可运行包；处理方式是重新制作/补齐发布包，不是让使用方手工联网下载：
+
+```powershell
+Test-Path .\config\bin\codegraph\node.exe
+Test-Path .\config\bin\codegraph\dist\bin\codegraph.js
+Test-Path .\config\skills\repowiki\vendor\node_modules
+Test-Path .\parsers
+Test-Path .\bin\opencode.exe
+Test-Path .\lingxicode.bat
+Test-Path .\config\opencode.json
+```
+
+也可以直接运行：
+
+```powershell
+npm run preflight
+```
+
+`bin/opencode.exe` 大于 GitHub 普通单文件限制，发布包使用 Git LFS 保存。维护人员推送仓库前必须确认 `.gitattributes` 已跟踪 `bin/opencode.exe`，并确认 `git lfs ls-files` 能看到它。
+
+L3 文档生成涉及大模型 worker，必须配置可用模型。`repowiki-l3-dispatcher.cjs` 默认读取随包提供的 `config/opencode.json`，也可运行时传 `--model <provider/model>`。
+发布包应提供可编辑的 `config/opencode.json` 模板；使用方只需要填入本地可用的模型/provider/API Key 或内网模型配置，不需要下载 runner。
+如果模型未配置，L3 worker 不能启动；这不是 FSD 规则问题，而是运行时配置未完成。
+
+仅发布包维护人员需要重新安装 vendor 依赖；普通使用方不执行这一步：
 
 ```powershell
 cd config\skills\repowiki\vendor
@@ -84,6 +127,44 @@ npm ci
 ```
 
 ## 端到端使用
+
+先确认当前目录是 lingxicode 根目录，且已经合并本插件包：
+
+```powershell
+pwd
+Test-Path .\config\skills\repowiki\repowiki-run.cjs
+Test-Path .\config\skills\wiki-l3-oracle-sp\SKILL.md
+Test-Path .\config\bin\codegraph\node.exe
+npm run preflight
+```
+
+### 主入口怎么理解
+
+本包的手工入口只有一个，不是新写一套独立 skill：
+
+```text
+config/skills/repowiki/SKILL.md
+  主 Skill 入口。负责 L1 -> L2 -> merge -> L3 scheduler -> L3 dispatcher 的完整流程。
+  命令入口是 config/skills/repowiki/repowiki-run.cjs。
+
+config/skills/wiki-l3-oracle-sp/
+  原目录已有的 Oracle 存过 FSD 业务规约包，负责模板、规则、校验口径。
+  它不是手工直接跑的主入口；scheduler 在识别 profile=oracle-sp 后会自动加载它。
+```
+
+所以正常使用只跑主编排入口：
+
+```powershell
+node config\skills\repowiki\repowiki-run.cjs D:\path\to\plsql-repo --from l1
+```
+
+不要手工直接“调用” `wiki-l3-oracle-sp/SKILL.md`。它会被 L3 task 的 `businessContext` 注入给 worker。
+
+源码对应关系：
+
+- `config/skills/repowiki/repowiki-l3-scheduler.cjs` 中 `oracle-sp` profile 自动映射到 `wiki-l3-oracle-sp`。
+- `config/skills/wiki-l3-oracle-sp/manifest.json` 声明 `docsDir: "fsd"`。
+- `config/skills/repowiki/lib/l3-skill-contract.cjs` 会把 `docsDir` 拼成 `<仓根>/docs/<docsDir>`，所以当前源码实际发布目录是 `<仓根>/docs/fsd/`。
 
 以一个 PL/SQL 项目为输入：
 
@@ -132,6 +213,12 @@ node config\skills\repowiki\repowiki-l3-scheduler.cjs D:\path\to\plsql-repo --l3
 
 # L3 执行
 node config\skills\repowiki\repowiki-l3-dispatcher.cjs D:\path\to\plsql-repo
+```
+
+如需指定模型：
+
+```powershell
+node config\skills\repowiki\repowiki-l3-dispatcher.cjs D:\path\to\plsql-repo --model provider/model
 ```
 
 ## 验收

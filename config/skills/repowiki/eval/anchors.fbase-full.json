@@ -1,0 +1,8 @@
+{
+  "_说明": "fbase-full gauntlet 专属回归断言。换项目时换这份(或不传 --anchors 只用通用分)。",
+  "methodCounts": { "CScanAlphaService": 2, "OverloadService": 3, "GtltRealService": 3, "ExternalJarService": 0 },
+  "inScopeMustHave": ["CScanAlphaService","CScanBetaService","CScanGammaService","Qpd01Service","Qhisd10Service","Qaccbal01Service","AnnoOnlyService","DsfBizService","MultiSvcA","MultiSvcB","ExternalJarService","VariantGenericService"],
+  "excludedMustNotHave": ["EchoServer","DibpsbcService","QpayentService","AssetPoolService","BankFuturesService","GtltEchoStub"],
+  "emptyServices": ["VariantEmptyService"],
+  "versionedServices": { "VersionedQueryService": 3 }
+}

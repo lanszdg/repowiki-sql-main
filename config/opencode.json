@@ -1,0 +1,47 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "enabled_providers": [
+    "enterprise-llm"
+  ],
+  "provider": {
+    "enterprise-llm": {
+      "name": "Enterprise or Intranet OpenAI-compatible LLM",
+      "npm": "@ai-sdk/openai-compatible",
+      "models": {
+        "default-model": {
+          "name": "default-model",
+          "temperature": true,
+          "tool_call": true,
+          "limit": {
+            "output": 200000,
+            "context": 128000
+          },
+          "reasoning": true,
+          "attachment": true
+        }
+      },
+      "options": {
+        "baseURL": "https://your-intranet-llm.example.com/v1",
+        "timeout": 300000,
+        "apiKey": "PUT_YOUR_API_KEY_HERE"
+      }
+    }
+  },
+  "mcp": {
+    "codegraph": {
+      "type": "local",
+      "command": [
+        "codegraph",
+        "serve",
+        "--mcp"
+      ],
+      "enabled": true
+    }
+  },
+  "instructions": [
+    "AGENTS.md"
+  ],
+  "share": "disabled",
+  "model": "enterprise-llm/default-model",
+  "autoupdate": false
+}

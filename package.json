@@ -4,6 +4,7 @@
   "private": true,
   "description": "Repowiki Oracle PL/SQL stored procedure to FSD pipeline.",
   "scripts": {
+    "preflight": "node scripts/preflight.cjs",
     "test": "node scripts/run-tests.cjs",
     "test:source-facts": "node config/skills/repowiki/tests/plsql-source-facts-eval.test.cjs && node config/skills/repowiki/tests/plsql-source-facts-corpus.test.cjs",
     "test:fsd": "node config/skills/repowiki/tests/fsd-facts-schema.test.cjs && node config/skills/repowiki/tests/fsd-facts-compiler.test.cjs && node config/skills/repowiki/tests/fsd-facts-renderer.test.cjs && node config/skills/repowiki/tests/fsd-facts-gate.test.cjs && node config/skills/repowiki/tests/fsd-l3-integration.test.cjs",
