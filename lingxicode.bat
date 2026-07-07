@@ -8,6 +8,7 @@ set OPENCODE_DISABLE_AUTOUPDATE=true
 set OPENCODE_DISABLE_MODELS_FETCH=true
 set OPENCODE_DISABLE_LSP_DOWNLOAD=true
 set OPENCODE_CONFIG_DIR=%~dp0config
+if not defined OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS set OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS=3600000
 
 REM --- CodeGraph (fact layer / single authoritative graph) ---
 REM Put the bundled codegraph launcher on PATH so mcp.codegraph in opencode.json resolves "codegraph".

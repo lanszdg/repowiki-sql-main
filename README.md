@@ -58,8 +58,8 @@ config/bin/codegraph/
   dist/bin/codegraph.js             CodeGraph CLI；必须随包携带
 
 bin/opencode.exe                    L3 worker 默认 runner；必须随包携带，使用 Git LFS 存储
-lingxicode.bat                      离线启动脚本，设置 parsers/codegraph/opencode config 环境变量
-config/opencode.json                LLM provider/model 配置；可由用户按环境配置
+lingxicode.bat                      SQL 发布包离线启动脚本，设置 parsers/codegraph/opencode config 环境变量
+config/opencode.json                LLM provider/model 配置模板；原目录真实 key 不入库，使用方按环境配置
 parsers/                            CodeGraph parser 资源；必须随包携带
 
 config/skills/repowiki/
@@ -116,7 +116,7 @@ npm run preflight
 `bin/opencode.exe` 大于 GitHub 普通单文件限制，发布包使用 Git LFS 保存。维护人员推送仓库前必须确认 `.gitattributes` 已跟踪 `bin/opencode.exe`，并确认 `git lfs ls-files` 能看到它。
 
 L3 文档生成涉及大模型 worker，必须配置可用模型。`repowiki-l3-dispatcher.cjs` 默认读取随包提供的 `config/opencode.json`，也可运行时传 `--model <provider/model>`。
-发布包应提供可编辑的 `config/opencode.json` 模板；使用方只需要填入本地可用的模型/provider/API Key 或内网模型配置，不需要下载 runner。
+原已跑通目录的 `config/opencode.json` 包含真实模型地址/API Key，不能提交到 GitHub；本发布包提供可编辑模板。使用方只需要填入本地可用的模型/provider/API Key 或内网模型配置，不需要下载 runner。
 如果模型未配置，L3 worker 不能启动；这不是 FSD 规则问题，而是运行时配置未完成。
 
 仅发布包维护人员需要重新安装 vendor 依赖；普通使用方不执行这一步：
@@ -152,11 +152,19 @@ config/skills/wiki-l3-oracle-sp/
   它不是手工直接跑的主入口；scheduler 在识别 profile=oracle-sp 后会自动加载它。
 ```
 
-所以正常使用只跑主编排入口：
+所以正常使用只跑主编排入口。全新项目端到端执行用：
+
+```powershell
+node config\skills\repowiki\repowiki-run.cjs D:\path\to\plsql-repo
+```
+
+如果目标仓库已有 `.repowiki/run-summary.json`，命令会从 `currentStage` 自动续跑。需要强制从第一阶段重新跑完整端到端时，才使用：
 
 ```powershell
 node config\skills\repowiki\repowiki-run.cjs D:\path\to\plsql-repo --from l1
 ```
+
+`--from l1` 的含义是“把起点设为 L1 后继续跑完整状态机”，不是只跑 L1。源码中 `repowiki-run.cjs` 会按 `l1 -> list -> l2 -> merge -> l3sched -> l3disp -> done` 继续推进。只想单独调试 L1 时才手工运行 `repowiki-codegraph-init.cjs`。
 
 不要手工直接“调用” `wiki-l3-oracle-sp/SKILL.md`。它会被 L3 task 的 `businessContext` 注入给 worker。
 
@@ -169,7 +177,7 @@ node config\skills\repowiki\repowiki-run.cjs D:\path\to\plsql-repo --from l1
 以一个 PL/SQL 项目为输入：
 
 ```powershell
-node config\skills\repowiki\repowiki-run.cjs D:\path\to\plsql-repo --from l1
+node config\skills\repowiki\repowiki-run.cjs D:\path\to\plsql-repo
 ```
 
 产物位置：
